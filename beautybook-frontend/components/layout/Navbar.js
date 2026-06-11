@@ -46,18 +46,19 @@ export default function Navbar() {
 
           {/* Hamburguesa — extremo izquierdo, solo mobile */}
           <button
-            className="navbar-toggler border-0 p-1 d-lg-none me-2"
+            className="btn border-0 p-0 d-lg-none lh-1"
             type="button"
             data-bs-toggle="offcanvas"
             data-bs-target="#navOffcanvas"
             aria-controls="navOffcanvas"
             aria-label="Abrir menú"
+            style={{ minWidth: '2.25rem', minHeight: '2.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <span className="navbar-toggler-icon" />
+            <i className="bi bi-list" style={{ fontSize: '1.6rem', lineHeight: 1 }} />
           </button>
 
           {/* Marca */}
-          <Link className="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+          <Link className="navbar-brand fw-bold d-flex align-items-center gap-2 ms-2 ms-lg-0" href="/">
             <i className="bi bi-calendar2-check text-primary" />
             BeautyBook
           </Link>
