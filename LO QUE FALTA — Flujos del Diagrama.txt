@@ -1,0 +1,192 @@
+LO QUE FALTA — Flujos del Diagrama de Secuencia
+
+---
+Flujo 2: Consultorio configura sus horarios y tratamientos
+
+Consultorio   Frontend         Laravel 13       Redis           PostgreSQL
+    |              |                |               |                |
+    |--inicia sesión en su panel--->|               |                |
+    |              |--POST /login------------------>|                |
+    |              |                |--valida credenciales---------->|
+    |              |                |<--datos del consultorio--------|
+    |              |<--token de sesión activo--------|               |
+    |              |                |               |                |
+    |--registra tratamiento-------->|               |                |
+    |  (nombre, duración, precio)   |               |                |
+    |              |--POST /tratamientos----------->|                |
+    |              |                |--INSERT tratamiento----------->|
+    |              |                |<--tratamiento guardado---------|
+    |              |<--confirmación: tratamiento creado--------------|
+    |              |                |               |                |
+    |--configura horarios de------->|               |                |
+    |  atención (días y horas)      |               |                |
+    |              |--POST /horarios--------------->|                |
+    |              |                |--INSERT horarios-------------->|
+    |              |                |<--horarios guardados-----------|
+    |              |                |--actualiza disponibilidad----->|
+    |              |                |<--caché actualizado------------|
+    |              |<--confirmación: horarios configurados-----------|
+    |<--panel muestra agenda actualizada con los nuevos bloques------|
+
+Líneas de vida:
+
+┌──────────────┬────────┬─────────────────────────────────────────────┐
+│  Línea de    │  Tipo  │                 Descripción                 │
+│     vida     │        │                                             │
+├──────────────┼────────┼─────────────────────────────────────────────┤
+│ Consultorio  │ Actor  │ Dueño o recepcionista que administra el     │
+│              │        │ panel                                       │
+├──────────────┼────────┼─────────────────────────────────────────────┤
+│ Frontend     │ Objeto │ Interfaz Next.js + Bootstrap del panel del  │
+│              │        │ consultorio                                 │
+├──────────────┼────────┼─────────────────────────────────────────────┤
+│ Laravel 13   │ Objeto │ Backend que valida y procesa la             │
+│              │        │ configuración                               │
+├──────────────┼────────┼─────────────────────────────────────────────┤
+│ Redis        │ Objeto │ Actualiza la disponibilidad visible para    │
+│              │        │ los pacientes                               │
+├──────────────┼────────┼─────────────────────────────────────────────┤
+│ PostgreSQL   │ Objeto │ Persiste los tratamientos y horarios de     │
+│              │        │ forma permanente                            │
+└──────────────┴────────┴─────────────────────────────────────────────┘
+
+Mensajes principales del flujo:
+
+┌──────┬──────────────────────────────────────────┬───────────────────┐
+│ Paso │                 Mensaje                  │       Tipo        │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 1    │ Consultorio inicia sesión en su panel    │ Acción del actor  │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 2    │ Frontend envía credenciales al backend   │ Petición HTTP     │
+│      │                                          │ POST              │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 3    │ Backend valida y retorna token de sesión │ Respuesta HTTP    │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 4    │ Consultorio registra un tratamiento con  │ Acción del actor  │
+│      │ nombre, duración y precio                │                   │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 5    │ Frontend envía los datos del tratamiento │ Petición HTTP     │
+│      │  al backend                              │ POST              │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 6    │ Backend inserta el tratamiento en        │ Escritura en base │
+│      │ PostgreSQL                               │  de datos         │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 7    │ Consultorio configura sus días y horas   │ Acción del actor  │
+│      │ de atención                              │                   │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 8    │ Frontend envía la configuración de       │ Petición HTTP     │
+│      │ horarios al backend                      │ POST              │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 9    │ Backend inserta los horarios en          │ Escritura en base │
+│      │ PostgreSQL                               │  de datos         │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 10   │ Backend actualiza la disponibilidad en   │ Escritura en      │
+│      │ Redis con los nuevos bloques             │ memoria           │
+├──────┼──────────────────────────────────────────┼───────────────────┤
+│ 11   │ Frontend muestra la agenda del           │ Respuesta al      │
+│      │ consultorio con los cambios aplicados    │ actor             │
+└──────┴──────────────────────────────────────────┴───────────────────┘
+
+Relación con el flujo del Paciente: Los horarios y tratamientos que el Consultorio registra en este flujo son exactamente los que el Paciente consulta en el paso 2 del Flujo 1 (GET /disponibilidad). Si el Consultorio no configura sus horarios, el Paciente no verá ningún espacio disponible. Redis actúa como el puente entre ambos flujos.
+
+---
+Flujo 3: Gestor del sistema administra un consultorio registrado
+
+Gestor         Frontend         Laravel 13                  PostgreSQL
+   |               |                |                             |
+   |--inicia sesión como gestor---->|                             |
+   |               |--POST /login (rol: gestor)----------------->  |
+   |               |                |--valida rol de gestor------>|
+   |               |                |<--acceso confirmado---------|
+   |               |<--panel de administración disponible---------|
+   |               |                |                             |
+   |--consulta lista de------------>|                             |
+   |  consultorios registrados      |                             |
+   |               |--GET /admin/consultorios------------------->|
+   |               |                |--SELECT consultorios------->|
+   |               |                |<--lista con estado y plan---|
+   |               |<--muestra tabla de consultorios y estados----|
+   |               |                |                             |
+   |--selecciona consultorio------->|                             |
+   |  con membrecía vencida         |                             |
+   |               |--GET /admin/consultorios/{id}-------------->|
+   |               |                |--SELECT detalle consultorio>|
+   |               |                |<--datos y fecha de vencim---|
+   |               |<--muestra detalle con alerta de vencimiento--|
+   |               |                |                             |
+   |--actualiza plan o vence------->|                             |
+   |  membrecía manualmente         |                             |
+   |               |--PUT /admin/membrecia/{id}----------------->|
+   |               |                |--UPDATE membrecía---------->|
+   |               |                |<--registro actualizado------|
+   |               |<--confirmación: membrecía actualizada--------|
+   |<--panel refleja el nuevo estado del consultorio--------------|
+
+Líneas de vida:
+
+┌──────────────┬────────┬──────────────────────────────────────────────┐
+│  Línea de    │  Tipo  │                 Descripción                  │
+│     vida     │        │                                              │
+├──────────────┼────────┼──────────────────────────────────────────────┤
+│ Gestor       │ Actor  │ Administrador interno de la plataforma       │
+│              │        │ BeautyBook                                   │
+├──────────────┼────────┼──────────────────────────────────────────────┤
+│ Frontend     │ Objeto │ Panel de administración en Next.js +         │
+│              │        │ Bootstrap                                    │
+├──────────────┼────────┼──────────────────────────────────────────────┤
+│ Laravel 13   │ Objeto │ Backend que verifica el rol de gestor y      │
+│              │        │ procesa los cambios                          │
+├──────────────┼────────┼──────────────────────────────────────────────┤
+│ PostgreSQL   │ Objeto │ Persiste el estado actualizado de            │
+│              │        │ consultorios y membrecías                    │
+└──────────────┴────────┴──────────────────────────────────────────────┘
+
+Mensajes principales del flujo:
+
+┌──────┬───────────────────────────────────────────┬──────────────────┐
+│ Paso │                  Mensaje                  │       Tipo       │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 1    │ Gestor inicia sesión con rol de           │ Acción del actor │
+│      │ administrador                             │                  │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 2    │ Frontend envía credenciales con           │ Petición HTTP    │
+│      │ identificador de rol gestor               │ POST             │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 3    │ Backend verifica el rol y habilita el     │ Respuesta HTTP   │
+│      │ panel de administración                   │                  │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 4    │ Gestor consulta la lista de todos los     │ Acción del actor │
+│      │ consultorios registrados                  │                  │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 5    │ Frontend solicita el listado al backend   │ Petición HTTP    │
+│      │                                           │ GET              │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 6    │ Backend consulta PostgreSQL y retorna el  │ Consulta a base  │
+│      │ listado con estado y plan activo          │ de datos         │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 7    │ Gestor selecciona un consultorio con      │ Acción del actor │
+│      │ membrecía vencida o por vencer            │                  │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 8    │ Frontend solicita el detalle completo del │ Petición HTTP    │
+│      │  consultorio seleccionado                 │ GET              │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 9    │ Backend retorna los datos del consultorio │ Consulta a base  │
+│      │  incluyendo fecha de vencimiento          │ de datos         │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 10   │ Gestor actualiza el plan o el estado de   │ Acción del actor │
+│      │ la membrecía                              │                  │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 11   │ Frontend envía la actualización al        │ Petición HTTP    │
+│      │ backend                                   │ PUT              │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 12   │ Backend actualiza el registro de          │ Escritura en     │
+│      │ membrecía en PostgreSQL                   │ base de datos    │
+├──────┼───────────────────────────────────────────┼──────────────────┤
+│ 13   │ Frontend muestra la confirmación y el     │ Respuesta al     │
+│      │ panel refleja el nuevo estado             │ actor            │
+└──────┴───────────────────────────────────────────┴──────────────────┘
+
+Relación con los otros flujos: Cuando el Gestor vence o bloquea una membrecía en este flujo, el caso de verificación CV05 del sistema se activa automáticamente: el Consultorio queda inhabilitado para recibir nuevas citas hasta que renueve su plan. Esto protege el modelo de negocio de BeautyBook sin requerir intervención manual en cada agendamiento.
+
+---
+Eso es todo lo que faltaba. Los tres flujos ahora cubren a los tres actores del diagrama de casos de uso: Paciente, Consultorio y Gestor del sistema, y además queda explicado cómo se conectan entre sí.
