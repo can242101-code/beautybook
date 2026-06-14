@@ -7,7 +7,7 @@ if (process.env.NODE_ENV === 'production') {
 const CUENTAS = [
   {
     rol: 'Gestor / Admin',
-    email: 'can242101@gmail.com',
+    email: 'gestor@beautybook.com',
     token: '76|vPg8QfvEyCX8qwT0FNdFbTadn8jHWRKRWODLHnxU2accebe0',
     destino: '/admin/dashboard',
     color: 'danger',

@@ -64,7 +64,7 @@ El frontend queda disponible en `http://localhost:3000`.
 
 | Rol | Correo | Contraseña |
 |-----|--------|------------|
-| Gestor (admin) | can242101@gmail.com | Demo1234! |
+| Gestor (admin) | gestor@beautybook.com | Demo1234! |
 | Paciente | karla.paciente@beautybook.com | Demo1234! |
 | Consultorio | demo_cons@beautybook.com | Demo1234! |
 

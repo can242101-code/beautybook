@@ -3,7 +3,7 @@ Cypress.Commands.add('loginAs', (role) => {
   const cuentas = {
     paciente:    { email: 'demo_pac@beautybook.com',  password: 'Demo1234!' },
     consultorio: { email: 'demo_cons@beautybook.com', password: 'Demo1234!' },
-    gestor:      { email: 'can242101@gmail.com',      password: '23456789'  },
+    gestor:      { email: 'gestor@beautybook.com',      password: 'Gestor1234!'  },
   };
 
   const { email, password } = cuentas[role];

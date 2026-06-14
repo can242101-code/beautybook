@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
 
         // ── 1. Gestor ──────────────────────────────────────────────────────────
         User::create([
-            'name'     => 'karla',
-            'email'    => 'can242101@gmail.com',
-            'password' => Hash::make('23456789'),
+            'name'     => 'Administrador',
+            'email'    => 'gestor@beautybook.com',
+            'password' => Hash::make('Gestor1234!'),
             'role'     => 'gestor',
         ]);
 
@@ -233,7 +233,7 @@ class DatabaseSeeder extends Seeder
         $this->command->table(
             ['Rol', 'Email', 'Contraseña'],
             [
-                ['Gestor',      'can242101@gmail.com',    '23456789'],
+                ['Gestor',      'gestor@beautybook.com',   'Gestor1234!'],
                 ['Consultorio', 'demo_cons@beautybook.com','Demo1234!'],
                 ['Paciente',    'demo_pac@beautybook.com', 'Demo1234!'],
             ]

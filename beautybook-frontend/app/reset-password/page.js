@@ -29,8 +29,8 @@ function ResetForm() {
       setDone(true);
       setTimeout(() => router.push('/login'), 2500);
     } catch (err) {
-      const msgs = err.response?.data?.errors;
-      setError(msgs ? Object.values(msgs).flat()[0] : err.response?.data?.message ?? 'Token inválido o expirado.');
+      const msgs = err.errors;
+      setError(msgs && Object.keys(msgs).length ? Object.values(msgs).flat()[0] : err.message ?? 'Token inválido o expirado.');
     } finally {
       setSubmitting(false);
     }

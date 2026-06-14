@@ -18,8 +18,8 @@ describe('Inicio de sesión', () => {
 
   it('gestor inicia sesión y llega al panel admin', () => {
     cy.visit('/login');
-    cy.get('input[name="email"]').type('can242101@gmail.com');
-    cy.get('input[name="password"]').type('23456789');
+    cy.get('input[name="email"]').type('gestor@beautybook.com');
+    cy.get('input[name="password"]').type('Gestor1234!');
     cy.get('button[type="submit"]').click();
     cy.url({ timeout: 10000 }).should('include', '/admin/dashboard');
   });

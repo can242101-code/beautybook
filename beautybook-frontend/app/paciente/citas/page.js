@@ -84,9 +84,9 @@ export default function MisCitasPage() {
     if (!reaFecha || !cita) return;
     setSlotsLoad(true); setSlots([]); setReaHora('');
     try {
-      const { data } = await api.get('/disponibilidad', {
-        params: { consultorio_id: cita.consultorio_id, tratamiento_id: cita.tratamiento_id, fecha: reaFecha },
-      });
+      const { data } = await api.get(
+        `/disponibilidad?consultorio_id=${cita.consultorio_id}&tratamiento_id=${cita.tratamiento_id}&fecha=${reaFecha}`
+      );
       setSlots(data.slots ?? []);
     } catch { setSlots([]); }
     finally { setSlotsLoad(false); }

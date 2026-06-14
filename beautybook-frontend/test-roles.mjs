@@ -94,7 +94,7 @@ sec('SETUP — cuentas de prueba');
 const PASS       = 'Password123!';
 const CONS_EMAIL = `cons_${TS}@test.com`;
 const PAC_EMAIL  = `pac_${TS}@test.com`;
-const GEST_EMAIL = 'can242101@gmail.com'; // gestor real en BD
+const GEST_EMAIL = 'gestor@beautybook.com'; // gestor real en BD
 
 // Consultorio
 const rCons = await POST('/register', {

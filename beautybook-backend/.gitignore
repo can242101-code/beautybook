@@ -1,6 +1,10 @@
 *.log
 .DS_Store
 .env
+
+# Scripts de setup con credenciales
+create_gestor.php
+setup_gestor.php
 .env.backup
 .env.production
 .phpactor.json

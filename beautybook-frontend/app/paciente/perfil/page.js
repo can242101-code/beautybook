@@ -24,8 +24,8 @@ export default function PerfilPacientePage() {
       if (data.id) setUser(data);
       setSuccess('Guardado correctamente.');
     } catch (err) {
-      const msgs = err.response?.data?.errors;
-      setError(msgs ? Object.values(msgs).flat()[0] : err.response?.data?.message ?? 'Error al guardar.');
+      const msgs = err.errors;
+      setError(msgs && Object.keys(msgs).length ? Object.values(msgs).flat()[0] : err.message ?? 'Error al guardar.');
     } finally {
       setSaving(false);
     }
