@@ -17,7 +17,15 @@ class HorarioRepository extends BaseRepository
         return $this->model
             ->where('consultorio_id', $consultorioId)
             ->where('activo', true)
-            ->orderByRaw("ARRAY_POSITION(ARRAY['lunes','martes','miercoles','jueves','viernes','sabado','domingo'], dia_semana)")
+            ->orderByRaw("CASE dia_semana
+                WHEN 'lunes'     THEN 1
+                WHEN 'martes'    THEN 2
+                WHEN 'miercoles' THEN 3
+                WHEN 'jueves'    THEN 4
+                WHEN 'viernes'   THEN 5
+                WHEN 'sabado'    THEN 6
+                WHEN 'domingo'   THEN 7
+                ELSE 8 END")
             ->get();
     }
 }

@@ -44,6 +44,14 @@ class AdminController extends Controller
         return response()->json($membrecia);
     }
 
+    public function activarConsultorio(int $id): JsonResponse
+    {
+        $consultorio = Consultorio::findOrFail($id);
+        $consultorio->update(['activo' => true]);
+        $consultorio->membrecia?->update(['activa' => true]);
+        return response()->json(['message' => 'Consultorio activado.']);
+    }
+
     public function bloquearConsultorio(int $id): JsonResponse
     {
         $consultorio = Consultorio::findOrFail($id);

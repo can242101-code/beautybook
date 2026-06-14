@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -18,49 +19,57 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'email'       => 'required|email|unique:users',
-            'password'    => 'required|string|min:8|confirmed',
-            'role'        => 'required|in:paciente,consultorio',
-            'telefono'    => 'nullable|string|max:20',
-            'nombre'      => 'required_if:role,consultorio|string|max:255',
-            'direccion'   => 'required_if:role,consultorio|string',
-            'ciudad'      => 'required_if:role,consultorio|string|max:100',
+            'name'               => 'required|string|max:255',
+            'email'              => 'required|email|unique:users',
+            'password'           => 'required|string|min:8|confirmed',
+            'role'               => 'required|in:paciente,consultorio',
+            'telefono'           => 'required_if:role,consultorio|nullable|string|max:20',
+            'nombre'             => 'required_if:role,consultorio|string|max:255',
+            'direccion'          => 'required_if:role,consultorio|string|max:500',
+            'ciudad'             => 'required_if:role,consultorio|string|max:100',
+            'cedula_profesional' => 'required_if:role,consultorio|string|min:7|max:20',
         ]);
 
-        $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-            'telefono' => $data['telefono'] ?? null,
-        ]);
-
-        if ($user->role === 'consultorio') {
-            $consultorio = Consultorio::create([
-                'user_id'   => $user->id,
-                'nombre'    => $data['nombre'],
-                'direccion' => $data['direccion'],
-                'ciudad'    => $data['ciudad'],
-                'telefono'  => $data['telefono'] ?? null,
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name'     => $data['name'],
+                'email'    => $data['email'],
+                'password' => Hash::make($data['password']),
+                'role'     => $data['role'],
+                'telefono' => $data['telefono'] ?? null,
             ]);
 
-            Membrecia::create([
-                'consultorio_id'   => $consultorio->id,
-                'plan'             => 'gratuito',
-                'limite_citas_mes' => 20,
-                'fecha_inicio'     => Carbon::today(),
-                'fecha_vencimiento'=> Carbon::today()->addYear(),
-                'activa'           => true,
-            ]);
-        } else {
-            Paciente::create(['user_id' => $user->id]);
-        }
+            if ($user->role === 'consultorio') {
+                $consultorio = Consultorio::create([
+                    'user_id'            => $user->id,
+                    'nombre'             => $data['nombre'],
+                    'direccion'          => $data['direccion'],
+                    'ciudad'             => $data['ciudad'],
+                    'telefono'           => $data['telefono'] ?? null,
+                    'cedula_profesional' => $data['cedula_profesional'],
+                    // Inicia inactivo — el gestor debe verificar y activar el consultorio
+                    'activo'             => false,
+                ]);
+
+                Membrecia::create([
+                    'consultorio_id'    => $consultorio->id,
+                    'plan'              => 'gratuito',
+                    'limite_citas_mes'  => 20,
+                    'fecha_inicio'      => Carbon::today(),
+                    'fecha_vencimiento' => Carbon::today()->addYear(),
+                    'activa'            => true,
+                ]);
+            } else {
+                Paciente::create(['user_id' => $user->id]);
+            }
+
+            return $user;
+        });
 
         $token = $user->createToken('beautybook')->plainTextToken;
 
         return response()->json([
-            'user'  => $user->load($user->role === 'consultorio' ? 'consultorio' : 'paciente'),
+            'user'  => $user->load($this->relaciones($user->role)),
             'token' => $token,
         ], 201);
     }
@@ -81,9 +90,35 @@ class AuthController extends Controller
         $token = $user->createToken('beautybook')->plainTextToken;
 
         return response()->json([
-            'user'  => $user->load($user->role === 'consultorio' ? 'consultorio' : 'paciente'),
+            'user'  => $user->load($this->relaciones($user->role)),
             'token' => $token,
         ]);
+    }
+
+    public function actualizarPerfil(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name'                 => 'sometimes|string|max:255',
+            'telefono'             => 'sometimes|nullable|string|max:20',
+            'password'             => 'sometimes|string|min:8|confirmed',
+            'current_password'     => 'required_with:password|string',
+        ]);
+
+        if (isset($data['password'])) {
+            if (!Hash::check($data['current_password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => ['La contraseña actual es incorrecta.'],
+                ]);
+            }
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        unset($data['current_password']);
+        $user->update($data);
+
+        return response()->json($user->load($this->relaciones($user->role)));
     }
 
     public function logout(Request $request): JsonResponse
@@ -94,6 +129,17 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user()->load($request->user()->role === 'consultorio' ? 'consultorio' : 'paciente'));
+        $user = $request->user();
+        return response()->json($user->load($this->relaciones($user->role)));
+    }
+
+    /** Devuelve las relaciones a cargar según el rol del usuario. */
+    private function relaciones(string $role): array
+    {
+        return match ($role) {
+            'consultorio' => ['consultorio.membrecia'],
+            'paciente'    => ['paciente'],
+            default       => [],
+        };
     }
 }

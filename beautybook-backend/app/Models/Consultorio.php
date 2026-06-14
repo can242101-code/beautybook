@@ -11,7 +11,7 @@ class Consultorio extends Model
 
     protected $fillable = [
         'user_id', 'nombre', 'direccion', 'ciudad',
-        'telefono', 'descripcion', 'foto', 'activo',
+        'cedula_profesional', 'telefono', 'descripcion', 'foto', 'activo',
     ];
 
     protected function casts(): array

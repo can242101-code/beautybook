@@ -14,8 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['role' => RoleMiddleware::class]);
-
-        $middleware->statefulApi();
+        // Token-based auth via Sanctum — no SPA cookie/CSRF needed
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {

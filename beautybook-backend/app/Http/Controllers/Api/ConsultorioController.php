@@ -14,9 +14,19 @@ class ConsultorioController extends Controller
     public function index(Request $request): JsonResponse
     {
         $ciudad = $request->query('ciudad', '');
-        $lista  = $ciudad
-            ? $this->repo->porCiudad($ciudad)
-            : $this->repo->all(['tratamientos', 'membrecia']);
+
+        if ($ciudad) {
+            $lista = $this->repo->porCiudad($ciudad);
+        } else {
+            $lista = $this->repo->activos(['membrecia'])
+                ->load([
+                    'tratamientos' => fn($q) => $q->where('activo', true),
+                    'horarios'     => fn($q) => $q->where('activo', true),
+                    // Solo traer calificación para mostrar promedio (sin datos personales)
+                    'citas'        => fn($q) => $q->select('id','consultorio_id','calificacion')
+                                                   ->whereNotNull('calificacion'),
+                ]);
+        }
 
         return response()->json($lista);
     }
@@ -24,7 +34,7 @@ class ConsultorioController extends Controller
     public function show(int $id): JsonResponse
     {
         $consultorio = $this->repo->find($id, ['tratamientos', 'horarios', 'membrecia']);
-        abort_unless($consultorio, 404);
+        abort_unless($consultorio && $consultorio->activo, 404);
         return response()->json($consultorio);
     }
 
@@ -34,11 +44,12 @@ class ConsultorioController extends Controller
         abort_unless($consultorio, 404);
 
         $data = $request->validate([
-            'nombre'      => 'sometimes|string|max:255',
-            'direccion'   => 'sometimes|string',
-            'ciudad'      => 'sometimes|string|max:100',
-            'telefono'    => 'sometimes|string|max:20',
-            'descripcion' => 'nullable|string',
+            'nombre'             => 'sometimes|string|max:255',
+            'direccion'          => 'sometimes|string',
+            'ciudad'             => 'sometimes|string|max:100',
+            'telefono'           => 'sometimes|nullable|string|max:20',
+            'descripcion'        => 'nullable|string',
+            'cedula_profesional' => 'sometimes|nullable|string|max:20',
         ]);
 
         $consultorio->update($data);

@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\CitaCancelada;
+use App\Events\NuevaCitaRegistrada;
 use App\Http\Controllers\Controller;
+use App\Models\Consultorio;
 use App\Repositories\CitaRepository;
 use App\Repositories\TratamientoRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class CitaController extends Controller
 {
@@ -21,9 +25,13 @@ class CitaController extends Controller
         $user = $request->user();
 
         $lista = match ($user->role) {
-            'paciente'     => $this->citas->porPaciente($user->paciente->id),
-            'consultorio'  => $this->citas->porConsultorioFecha($user->consultorio->id, now()->toDateString(), ['pendiente', 'confirmada', 'completada']),
-            default        => collect(),
+            'paciente'    => $this->citas->porPaciente($user->paciente->id),
+            'consultorio' => $this->citas->porConsultorioFecha(
+                $user->consultorio->id,
+                $request->query('fecha', now()->toDateString()),
+                ['pendiente', 'confirmada', 'completada']
+            ),
+            default => collect(),
         };
 
         return response()->json($lista);
@@ -32,56 +40,124 @@ class CitaController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'consultorio_id'  => 'required|exists:consultorios,id',
-            'tratamiento_id'  => 'required|exists:tratamientos,id',
-            'fecha'           => 'required|date|after_or_equal:today',
-            'hora_inicio'     => 'required|date_format:H:i',
-            'notas'           => 'nullable|string|max:500',
+            'consultorio_id' => 'required|exists:consultorios,id',
+            'tratamiento_id' => 'required|exists:tratamientos,id',
+            'fecha'          => 'required|date|after_or_equal:today',
+            'hora_inicio'    => 'required|date_format:H:i',
+            'notas'          => 'nullable|string|max:500',
         ]);
 
+        // Verificar que el consultorio está activo y verificado
+        $consultorio = Consultorio::with('membrecia')->findOrFail((int) $data['consultorio_id']);
+
+        if (!$consultorio->activo) {
+            return response()->json([
+                'message' => 'Este consultorio no está disponible actualmente.',
+            ], 422);
+        }
+
+        $membrecia = $consultorio->membrecia;
+        if (!$membrecia || !$membrecia->vigente()) {
+            return response()->json([
+                'message' => 'Este consultorio no puede recibir citas en este momento (membrecía inactiva).',
+            ], 422);
+        }
+
+        if ($membrecia->limite_citas_mes < 9999) {
+            $citasMes = $this->citas->contarMes(
+                (int) $data['consultorio_id'],
+                now()->year,
+                now()->month
+            );
+            if ($citasMes >= $membrecia->limite_citas_mes) {
+                return response()->json([
+                    'message' => 'Este consultorio ha alcanzado el límite de citas de su plan para este mes.',
+                ], 422);
+            }
+        }
+
+        // Verificar que el tratamiento pertenece al consultorio y está activo
         $tratamiento = $this->tratamientos->find((int) $data['tratamiento_id']);
-        $horaFin     = \Carbon\Carbon::parse($data['hora_inicio'])
+        if (!$tratamiento || $tratamiento->consultorio_id !== $consultorio->id || !$tratamiento->activo) {
+            return response()->json([
+                'message' => 'El tratamiento seleccionado no está disponible.',
+            ], 422);
+        }
+
+        $horaFin    = \Carbon\Carbon::parse($data['hora_inicio'])
                         ->addMinutes($tratamiento->duracion_minutos)
                         ->format('H:i');
+        $pacienteId = $request->user()->paciente->id;
 
-        if ($this->citas->hayConflicto($data['consultorio_id'], $data['fecha'], $data['hora_inicio'], $horaFin)) {
+        $cita = DB::transaction(function () use ($data, $horaFin, $pacienteId) {
+            if ($this->citas->hayConflicto($data['consultorio_id'], $data['fecha'], $data['hora_inicio'], $horaFin)) {
+                return null;
+            }
+            return $this->citas->create([
+                ...$data,
+                'paciente_id' => $pacienteId,
+                'hora_fin'    => $horaFin,
+                'estado'      => 'pendiente',
+            ]);
+        });
+
+        if (!$cita) {
             return response()->json(['message' => 'El horario ya está ocupado. Elige otro disponible.'], 422);
         }
 
-        $pacienteId = $request->user()->paciente->id;
-
-        $cita = $this->citas->create([
-            ...$data,
-            'paciente_id' => $pacienteId,
-            'hora_fin'    => $horaFin,
-            'estado'      => 'pendiente',
-        ]);
-
-        $this->limpiarCacheDisponibilidad($data['consultorio_id'], $data['tratamiento_id'], $data['fecha']);
+        $this->limpiarCache($consultorio->id, $data['tratamiento_id'], $data['fecha']);
+        event(new NuevaCitaRegistrada($cita));
 
         return response()->json($cita->load(['paciente.user', 'consultorio', 'tratamiento']), 201);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $cita = $this->citas->find($id, ['paciente.user', 'consultorio', 'tratamiento']);
-        abort_unless($cita, 404);
+        $pacienteId = $request->user()->paciente->id;
+        $cita       = $this->citas->find($id, ['paciente.user', 'consultorio', 'tratamiento']);
+
+        abort_unless($cita && $cita->paciente_id === $pacienteId, 404);
         return response()->json($cita);
     }
 
     public function cancelar(Request $request, int $id): JsonResponse
     {
-        $cita = $this->citas->find($id);
-        abort_unless($cita, 404);
+        $pacienteId = $request->user()->paciente->id;
+        $cita       = $this->citas->find($id);
+
+        abort_unless($cita && $cita->paciente_id === $pacienteId, 404);
 
         if ($cita->estado === 'cancelada') {
             return response()->json(['message' => 'La cita ya estaba cancelada.'], 422);
         }
 
+        if ($cita->estado === 'completada') {
+            return response()->json(['message' => 'No se puede cancelar una cita ya completada.'], 422);
+        }
+
         $cita->cancelar();
-        $this->limpiarCacheDisponibilidad($cita->consultorio_id, $cita->tratamiento_id, $cita->fecha->toDateString());
+        $this->limpiarCache($cita->consultorio_id, $cita->tratamiento_id, $cita->fecha->toDateString());
+        event(new CitaCancelada($cita));
 
         return response()->json(['message' => 'Cita cancelada correctamente.']);
+    }
+
+    public function cancelarPorConsultorio(Request $request, int $id): JsonResponse
+    {
+        $consultorioId = $request->user()->consultorio->id;
+        $cita          = $this->citas->find($id);
+
+        abort_unless($cita && $cita->consultorio_id === $consultorioId, 404);
+
+        if (!in_array($cita->estado, ['pendiente', 'confirmada'])) {
+            return response()->json(['message' => 'Solo se pueden cancelar citas pendientes o confirmadas.'], 422);
+        }
+
+        $cita->cancelar();
+        $this->limpiarCache($cita->consultorio_id, $cita->tratamiento_id, $cita->fecha->toDateString());
+        event(new CitaCancelada($cita));
+
+        return response()->json(['message' => 'Cita cancelada.']);
     }
 
     public function actualizarEstado(Request $request, int $id): JsonResponse
@@ -105,8 +181,82 @@ class CitaController extends Controller
         return response()->json($cita->fresh(['paciente.user', 'consultorio', 'tratamiento']));
     }
 
-    private function limpiarCacheDisponibilidad(int $consultorioId, int $tratamientoId, string $fecha): void
+    public function calificar(Request $request, int $id): JsonResponse
     {
-        Cache::forget("disponibilidad:{$consultorioId}:{$tratamientoId}:{$fecha}");
+        $data = $request->validate([
+            'calificacion'            => 'required|integer|min:1|max:5',
+            'comentario_calificacion' => 'nullable|string|max:500',
+        ]);
+
+        $pacienteId = $request->user()->paciente->id;
+        $cita       = $this->citas->find($id);
+
+        abort_unless($cita && $cita->paciente_id === $pacienteId, 404);
+
+        if ($cita->estado !== 'completada') {
+            return response()->json(['message' => 'Solo se pueden calificar citas completadas.'], 422);
+        }
+        if ($cita->calificacion !== null) {
+            return response()->json(['message' => 'Esta cita ya fue calificada.'], 422);
+        }
+
+        $cita->update($data);
+        return response()->json($cita);
+    }
+
+    public function reagendar(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'fecha'       => 'required|date|after_or_equal:today',
+            'hora_inicio' => 'required|date_format:H:i',
+        ]);
+
+        $pacienteId = $request->user()->paciente->id;
+        $cita       = $this->citas->find($id);
+
+        abort_unless($cita && $cita->paciente_id === $pacienteId, 404);
+
+        if (!in_array($cita->estado, ['pendiente', 'confirmada'])) {
+            return response()->json(['message' => 'Solo se pueden reagendar citas pendientes o confirmadas.'], 422);
+        }
+
+        // Verificar que el consultorio sigue activo y con membrecía vigente
+        $consultorio = Consultorio::with('membrecia')->find($cita->consultorio_id);
+        if (!$consultorio || !$consultorio->activo) {
+            return response()->json(['message' => 'El consultorio no está disponible para reagendar.'], 422);
+        }
+        if (!$consultorio->membrecia?->vigente()) {
+            return response()->json(['message' => 'El consultorio no puede recibir citas actualmente.'], 422);
+        }
+
+        $tratamiento = $this->tratamientos->find($cita->tratamiento_id);
+        $horaFin     = \Carbon\Carbon::parse($data['hora_inicio'])
+                        ->addMinutes($tratamiento->duracion_minutos)
+                        ->format('H:i');
+
+        $fechaAnterior = $cita->fecha->toDateString();
+
+        $actualizada = DB::transaction(function () use ($cita, $data, $horaFin) {
+            if ($this->citas->hayConflicto($cita->consultorio_id, $data['fecha'], $data['hora_inicio'], $horaFin, $cita->id)) {
+                return null;
+            }
+            $cita->update([...$data, 'hora_fin' => $horaFin, 'estado' => 'pendiente']);
+            return $cita;
+        });
+
+        if (!$actualizada) {
+            return response()->json(['message' => 'El horario ya está ocupado. Elige otro disponible.'], 422);
+        }
+
+        // Limpiar caché de la fecha anterior y la nueva
+        $this->limpiarCache($cita->consultorio_id, $cita->tratamiento_id, $fechaAnterior);
+        $this->limpiarCache($cita->consultorio_id, $cita->tratamiento_id, $data['fecha']);
+
+        return response()->json($actualizada->fresh(['paciente.user', 'consultorio', 'tratamiento']));
+    }
+
+    private function limpiarCache(int $consultorioId, int $tratamientoId, string $fecha): void
+    {
+        Cache::tags(["disp:{$consultorioId}"])->forget("disp:{$consultorioId}:{$tratamientoId}:{$fecha}");
     }
 }

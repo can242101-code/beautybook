@@ -6,25 +6,35 @@ async function request(method, endpoint, body = null) {
   const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : null,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${endpoint}`, {
+      method,
+      headers,
+      body: body !== null ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    const err = new Error('No se pudo conectar con el servidor. Verifica que el backend esté activo.');
+    err.status = 0;
+    throw err;
+  }
 
-  // Token expirado o inválido — limpia sesión y redirige al login
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('bb-token');
-      window.location.href = '/login';
+      // Notifica a AuthContext para limpiar el estado y redirigir al login.
+      // Esto cubre tanto la verificación inicial como la expiración mid-session.
+      window.dispatchEvent(new CustomEvent('bb:session-expired'));
     }
-    return;
+    const err = new Error('Sesión expirada. Por favor inicia sesión de nuevo.');
+    err.status = 401;
+    throw err;
   }
 
   const data = res.status !== 204 ? await res.json() : null;
 
   if (!res.ok) {
-    const err = new Error(data?.message || 'Error en la solicitud');
+    const err = new Error(data?.message || 'Error en la solicitud.');
     err.errors = data?.errors ?? {};
     err.status  = res.status;
     throw err;

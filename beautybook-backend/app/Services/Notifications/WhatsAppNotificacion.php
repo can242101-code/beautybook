@@ -10,17 +10,20 @@ class WhatsAppNotificacion implements NotificacionInterface
 {
     public function enviarConfirmacion(Cita $cita): void
     {
-        Log::info("WhatsApp confirmación → {$cita->paciente->user->telefono}", ['cita_id' => $cita->id]);
+        $telefono = $cita->paciente->user->telefono ?? 'sin teléfono';
+        Log::info("WhatsApp confirmación → {$telefono}", ['cita_id' => $cita->id]);
         // Integrar con Twilio/Meta Cloud API aquí
     }
 
     public function enviarCancelacion(Cita $cita): void
     {
-        Log::info("WhatsApp cancelación → {$cita->paciente->user->telefono}", ['cita_id' => $cita->id]);
+        $telefono = $cita->paciente->user->telefono ?? 'sin teléfono';
+        Log::info("WhatsApp cancelación → {$telefono}", ['cita_id' => $cita->id]);
     }
 
     public function enviarRecordatorio(Cita $cita): void
     {
-        Log::info("WhatsApp recordatorio → {$cita->paciente->user->telefono}", ['cita_id' => $cita->id]);
+        $telefono = $cita->paciente->user->telefono ?? 'sin teléfono';
+        Log::info("WhatsApp recordatorio → {$telefono}", ['cita_id' => $cita->id]);
     }
 }

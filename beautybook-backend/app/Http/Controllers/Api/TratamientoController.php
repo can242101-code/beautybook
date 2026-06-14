@@ -36,6 +36,10 @@ class TratamientoController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        $consultorioId = $request->user()->consultorio->id;
+        $tratamiento   = $this->repo->find($id);
+        abort_unless($tratamiento && $tratamiento->consultorio_id === $consultorioId, 404);
+
         $data = $request->validate([
             'nombre'           => 'sometimes|string|max:255',
             'duracion_minutos' => 'sometimes|integer|min:10|max:480',
@@ -47,8 +51,12 @@ class TratamientoController extends Controller
         return response()->json($this->repo->update($id, $data));
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
+        $consultorioId = $request->user()->consultorio->id;
+        $tratamiento   = $this->repo->find($id);
+        abort_unless($tratamiento && $tratamiento->consultorio_id === $consultorioId, 404);
+
         $this->repo->delete($id);
         return response()->json(null, 204);
     }

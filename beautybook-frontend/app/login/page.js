@@ -1,72 +1,146 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import AppAlert from '@/components/ui/AppAlert';
-import ThemeToggle from '@/components/layout/ThemeToggle';
+import PublicLayout from '@/components/layout/PublicLayout';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-const REDIRECT = { paciente: '/paciente/dashboard', consultorio: '/consultorio/dashboard', gestor: '/admin/dashboard' };
+const REDIRECT = {
+  paciente:    '/paciente/dashboard',
+  consultorio: '/consultorio/dashboard',
+  gestor:      '/admin/dashboard',
+};
 
 export default function LoginPage() {
-  const [form, setForm]     = useState({ email: '', password: '' });
-  const [error, setError]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login }           = useAuth();
-  const router              = useRouter();
+  const [email,      setEmail]      = useState('');
+  const [password,   setPassword]   = useState('');
+  const [showPass,   setShowPass]   = useState(false);
+  const [error,      setError]      = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const { login, user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) router.replace(REDIRECT[user.role] ?? '/');
+  }, [user, loading, router]);
 
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
+    setSubmitting(true);
     try {
-      const user = await login(form.email, form.password);
-      router.push(REDIRECT[user.role] ?? '/');
+      const loggedUser = await login(email.trim(), password);
+      router.push(REDIRECT[loggedUser.role] ?? '/');
     } catch (err) {
-      setError(err.message || 'Error al iniciar sesión.');
+      const msg = err.errors?.email?.[0] || err.errors?.password?.[0] || err.message || 'Error al iniciar sesión.';
+      setError(msg);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  if (loading) return <LoadingSpinner />;
+
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-body-secondary">
-      <div className="card shadow border-0 w-100" style={{ maxWidth: 420 }}>
-        <div className="card-body p-4">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-calendar2-check fs-4 text-primary" />
-              <span className="fw-bold fs-5">BeautyBook</span>
+    <PublicLayout>
+      <div className="auth-bg d-flex align-items-start justify-content-center p-3 pt-5">
+        <div className="card auth-card w-100" style={{ maxWidth: 420 }}>
+          <div className="card-body p-4 p-sm-5">
+
+            {/* Icono + título */}
+            <div className="text-center mb-4">
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
+                style={{
+                  width: 52, height: 52,
+                  background: 'linear-gradient(135deg, var(--bb-primary), var(--bb-primary-dark))',
+                  boxShadow: '0 4px 14px rgba(var(--bb-primary-rgb),.35)',
+                }}
+              >
+                <i className="bi bi-calendar2-check fs-4 text-white" />
+              </div>
+              <h5 className="fw-bold mb-1">Iniciar sesión</h5>
+              <p className="text-muted small mb-0">Accede a tu cuenta para continuar.</p>
             </div>
-            <ThemeToggle />
+
+            <AppAlert type="danger" message={error} onClose={() => setError('')} />
+
+            <form onSubmit={submit} noValidate>
+
+              <div className="mb-3">
+                <label className="form-label fw-medium">Correo electrónico</label>
+                <div className="input-group">
+                  <span className="input-group-text">
+                    <i className="bi bi-envelope text-muted" />
+                  </span>
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label className="form-label fw-medium mb-0">Contraseña</label>
+                  <Link href="/forgot-password" className="small text-primary text-decoration-none">
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+                <div className="input-group">
+                  <span className="input-group-text">
+                    <i className="bi bi-lock text-muted" />
+                  </span>
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    className="form-control"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowPass(s => !s)}
+                    tabIndex={-1}
+                    title={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    <i className={`bi bi-${showPass ? 'eye-slash' : 'eye'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary w-100 py-2"
+                disabled={submitting || !email || !password}
+                style={{ fontWeight: 600, letterSpacing: '.02em' }}
+              >
+                {submitting
+                  ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Ingresando…</>
+                  : <><i className="bi bi-box-arrow-in-right me-2" />Ingresar</>}
+              </button>
+            </form>
+
+            <p className="text-center text-muted small mt-4 mb-0">
+              ¿No tienes cuenta?{' '}
+              <Link href="/register" className="fw-semibold text-primary text-decoration-none">
+                Regístrate aquí
+              </Link>
+            </p>
+
           </div>
-
-          <h5 className="mb-1">Iniciar sesión</h5>
-          <p className="text-muted small mb-4">Accede a tu cuenta para continuar.</p>
-
-          <AppAlert type="danger" message={error} />
-
-          <form onSubmit={submit}>
-            <div className="mb-3">
-              <label className="form-label">Correo electrónico</label>
-              <input name="email" type="email" className="form-control" value={form.email} onChange={handle} required autoFocus />
-            </div>
-            <div className="mb-4">
-              <label className="form-label">Contraseña</label>
-              <input name="password" type="password" className="form-control" value={form.password} onChange={handle} required />
-            </div>
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-              {loading ? <><span className="spinner-border spinner-border-sm me-2" />Ingresando…</> : 'Ingresar'}
-            </button>
-          </form>
-
-          <p className="text-center text-muted small mt-4 mb-0">
-            ¿No tienes cuenta? <Link href="/register">Regístrate</Link>
-          </p>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

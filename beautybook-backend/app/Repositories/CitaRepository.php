@@ -16,7 +16,7 @@ class CitaRepository extends BaseRepository
     {
         return $this->model
             ->where('consultorio_id', $consultorioId)
-            ->where('fecha', $fecha)
+            ->whereDate('fecha', $fecha)
             ->when(!empty($estados), fn($q) => $q->whereIn('estado', $estados))
             ->with(['paciente.user', 'tratamiento'])
             ->orderBy('hora_inicio')
@@ -32,17 +32,26 @@ class CitaRepository extends BaseRepository
             ->get();
     }
 
+    public function contarMes(int $consultorioId, int $anio, int $mes): int
+    {
+        return $this->model
+            ->where('consultorio_id', $consultorioId)
+            ->whereYear('fecha', $anio)
+            ->whereMonth('fecha', $mes)
+            ->whereIn('estado', ['pendiente', 'confirmada', 'completada'])
+            ->count();
+    }
+
     public function hayConflicto(int $consultorioId, string $fecha, string $horaInicio, string $horaFin, ?int $exceptoId = null): bool
     {
+        // Dos intervalos [a,b) y [c,d) se solapan si y solo si a < d AND b > c.
+        // Citas consecutivas (b == c) NO solapan.
         $query = $this->model
             ->where('consultorio_id', $consultorioId)
-            ->where('fecha', $fecha)
+            ->whereDate('fecha', $fecha)
             ->whereIn('estado', ['pendiente', 'confirmada'])
-            ->where(function ($q) use ($horaInicio, $horaFin) {
-                $q->whereBetween('hora_inicio', [$horaInicio, $horaFin])
-                  ->orWhereBetween('hora_fin', [$horaInicio, $horaFin])
-                  ->orWhere(fn($q2) => $q2->where('hora_inicio', '<=', $horaInicio)->where('hora_fin', '>=', $horaFin));
-            });
+            ->where('hora_inicio', '<', $horaFin)
+            ->where('hora_fin',    '>', $horaInicio);
 
         if ($exceptoId) {
             $query->where('id', '!=', $exceptoId);

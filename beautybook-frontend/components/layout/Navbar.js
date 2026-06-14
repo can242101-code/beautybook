@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 
@@ -9,12 +9,16 @@ const LINKS = {
     { href: '/paciente/dashboard',    label: 'Inicio',       icon: 'bi-house' },
     { href: '/paciente/consultorios', label: 'Consultorios', icon: 'bi-building' },
     { href: '/paciente/citas',        label: 'Mis citas',    icon: 'bi-calendar3' },
+    { href: '/paciente/perfil',       label: 'Perfil',       icon: 'bi-person-gear' },
   ],
   consultorio: [
-    { href: '/consultorio/dashboard',    label: 'Panel',        icon: 'bi-grid' },
-    { href: '/consultorio/tratamientos', label: 'Tratamientos', icon: 'bi-clipboard2-pulse' },
-    { href: '/consultorio/horarios',     label: 'Horarios',     icon: 'bi-clock' },
-    { href: '/consultorio/perfil',       label: 'Perfil',       icon: 'bi-person-gear' },
+    { href: '/consultorio/dashboard',    label: 'Panel',         icon: 'bi-grid' },
+    { href: '/consultorio/agenda',       label: 'Agenda',        icon: 'bi-calendar-week' },
+    { href: '/consultorio/pacientes',    label: 'Pacientes',     icon: 'bi-people' },
+    { href: '/consultorio/estadisticas', label: 'Estadísticas',  icon: 'bi-bar-chart-line' },
+    { href: '/consultorio/tratamientos', label: 'Tratamientos',  icon: 'bi-clipboard2-pulse' },
+    { href: '/consultorio/horarios',     label: 'Horarios',      icon: 'bi-clock' },
+    { href: '/consultorio/perfil',       label: 'Perfil',        icon: 'bi-person-gear' },
   ],
   gestor: [
     { href: '/admin/dashboard',    label: 'Panel',        icon: 'bi-grid' },
@@ -31,6 +35,7 @@ const closeOffcanvas = () => {
 export default function Navbar() {
   const { user, logout } = useAuth();
   const router           = useRouter();
+  const pathname         = usePathname();
   const links            = user ? (LINKS[user.role] ?? []) : [];
 
   const handleLogout = async () => {
@@ -39,46 +44,83 @@ export default function Navbar() {
     router.push('/login');
   };
 
+  const active = (href) => pathname === href || pathname.startsWith(href + '/');
+
   return (
     <>
-      <nav className="navbar navbar-expand-lg border-bottom">
-        <div className="container">
+      {/* ══════════════════════════════════════════
+          NAVBAR  sticky · z-40 · fondo sólido
+          Layout: [hamburguesa + logo] ── [derecha]
+      ══════════════════════════════════════════ */}
+      <nav
+        className="navbar border-bottom sticky-top bg-body"
+        style={{ zIndex: 40, minHeight: '3.5rem' }}
+      >
+        <div className="container-fluid px-3 px-lg-4" style={{ display: 'flex', alignItems: 'center', flexWrap: 'nowrap' }}>
 
-          {/* Hamburguesa — extremo izquierdo, solo mobile */}
-          <button
-            className="btn border-0 p-0 d-lg-none lh-1"
-            type="button"
-            data-bs-toggle="offcanvas"
-            data-bs-target="#navOffcanvas"
-            aria-controls="navOffcanvas"
-            aria-label="Abrir menú"
-            style={{ minWidth: '2.25rem', minHeight: '2.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <i className="bi bi-list" style={{ fontSize: '1.6rem', lineHeight: 1 }} />
-          </button>
+          {/* ── IZQUIERDA: hamburguesa (< lg) + logo ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 
-          {/* Marca */}
-          <Link className="navbar-brand fw-bold d-flex align-items-center gap-2 ms-2 ms-lg-0" href="/">
-            <i className="bi bi-calendar2-check text-primary" />
-            BeautyBook
-          </Link>
+            {/* ▸ Hamburguesa
+                Visible:  mobile (< 576px) + tablet (576–991px)
+                Oculta:   desktop (≥ 992px)                     */}
+            <button
+              type="button"
+              className="d-lg-none"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#navOffcanvas"
+              aria-controls="navOffcanvas"
+              aria-label="Abrir menú"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '6px 8px',
+                lineHeight: 1,
+                borderRadius: '6px',
+              }}
+            >
+              <i
+                className="bi bi-list"
+                style={{ fontSize: '1.75rem', display: 'block', color: 'var(--bs-body-color)' }}
+              />
+            </button>
 
-          {/* Desktop (lg+): nav + acciones */}
-          <div className="d-none d-lg-flex align-items-center gap-1 ms-auto">
+            {/* Logo */}
+            <Link className="navbar-brand fw-bold mb-0 d-flex align-items-center gap-2" href="/">
+              <i className="bi bi-calendar2-check text-primary" />
+              BeautyBook
+            </Link>
+          </div>
+
+          {/* ── DERECHA: nav links (≥ lg) + tema + usuario ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}>
+
+            {/* Links de navegación — solo desktop ≥ 992px */}
             {links.length > 0 && (
-              <ul className="navbar-nav me-2 flex-row gap-1">
+              <ul className="navbar-nav flex-row gap-0 me-1 d-none d-lg-flex">
                 {links.map(l => (
                   <li key={l.href} className="nav-item">
-                    <Link className="nav-link px-3" href={l.href}>{l.label}</Link>
+                    <Link
+                      className={`nav-link px-2 rounded-2 ${active(l.href) ? 'active fw-semibold bg-primary bg-opacity-10' : ''}`}
+                      style={{ fontSize: '.875rem' }}
+                      href={l.href}
+                    >
+                      {l.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             )}
+
+            {/* ThemeToggle — siempre visible */}
             <ThemeToggle />
+
+            {/* Acciones usuario — solo desktop ≥ 992px */}
             {user ? (
-              <>
-                <span className="text-muted small ms-2 d-none d-xl-flex align-items-center gap-1">
-                  <i className="bi bi-person-circle me-1" />{user.name}
+              <div className="d-none d-lg-flex align-items-center gap-1">
+                <span className="text-muted small ms-1 d-none d-xl-flex align-items-center gap-1">
+                  <i className="bi bi-person-circle" /> {user.name}
                 </span>
                 <button
                   className="btn btn-outline-secondary btn-sm ms-1 d-flex align-items-center gap-1"
@@ -86,52 +128,67 @@ export default function Navbar() {
                 >
                   <i className="bi bi-box-arrow-right" /> Salir
                 </button>
-              </>
+              </div>
             ) : (
-              <>
-                <Link className="btn btn-outline-primary btn-sm ms-2" href="/login">Ingresar</Link>
-                <Link className="btn btn-primary btn-sm ms-1" href="/register">Registrarse</Link>
-              </>
+              <div className="d-none d-lg-flex gap-1 ms-1">
+                <Link className="btn btn-outline-primary btn-sm" href="/login">Ingresar</Link>
+                <Link className="btn btn-primary btn-sm" href="/register">Registrarse</Link>
+              </div>
             )}
-          </div>
 
-          {/* Toggle de tema — extremo derecho, solo mobile */}
-          <div className="d-flex d-lg-none align-items-center ms-auto">
-            <ThemeToggle />
           </div>
-
         </div>
       </nav>
 
-      {/* Offcanvas — sale desde la izquierda (mismo lado que el botón) */}
+      {/* ══════════════════════════════════════════
+          OFFCANVAS  fixed · top-0 · left-0 · z-50
+          Ancho 256px · overlay automático Bootstrap
+      ══════════════════════════════════════════ */}
       <div
         className="offcanvas offcanvas-start"
         tabIndex="-1"
         id="navOffcanvas"
         aria-labelledby="navOffcanvasLabel"
-        style={{ maxWidth: '280px' }}
+        style={{ maxWidth: '256px', zIndex: 50 }}
       >
+        {/* Cabecera */}
         <div className="offcanvas-header border-bottom py-3">
           <div className="d-flex align-items-center gap-2" id="navOffcanvasLabel">
             <i className="bi bi-calendar2-check text-primary" />
             <span className="fw-bold">BeautyBook</span>
           </div>
-          <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar" />
+          <button
+            type="button"
+            className="btn-close"
+            data-bs-dismiss="offcanvas"
+            aria-label="Cerrar"
+          />
         </div>
 
+        {/* Cuerpo */}
         <div className="offcanvas-body d-flex flex-column p-0">
+
           <nav className="flex-grow-1 py-2">
-            {links.map(l => (
+            {links.length > 0 ? links.map(l => (
               <Link
                 key={l.href}
-                className="d-flex align-items-center gap-3 px-4 py-3 text-decoration-none nav-link"
+                className={`d-flex align-items-center gap-3 px-4 py-3 text-decoration-none nav-link ${active(l.href) ? 'active fw-semibold' : ''}`}
                 href={l.href}
                 onClick={closeOffcanvas}
               >
-                <i className={`bi ${l.icon} text-primary`} style={{ width: '1.1rem', textAlign: 'center' }} />
+                <i
+                  className={`bi ${l.icon}`}
+                  style={{
+                    width: '1.1rem',
+                    textAlign: 'center',
+                    color: active(l.href) ? 'var(--bb-primary)' : 'var(--bs-secondary-color)',
+                  }}
+                />
                 <span>{l.label}</span>
               </Link>
-            ))}
+            )) : (
+              <p className="px-4 py-3 text-muted small mb-0">Accede o crea tu cuenta.</p>
+            )}
           </nav>
 
           <div className="border-top p-4 d-flex flex-column gap-2">

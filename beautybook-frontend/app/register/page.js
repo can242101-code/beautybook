@@ -5,31 +5,56 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AppAlert from '@/components/ui/AppAlert';
-import ThemeToggle from '@/components/layout/ThemeToggle';
+import FormField from '@/components/ui/FormField';
+import PasswordField from '@/components/ui/PasswordField';
+import PrivacyPolicyModal from '@/components/ui/PrivacyPolicyModal';
+import PublicLayout from '@/components/layout/PublicLayout';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-const REDIRECT = { paciente: '/paciente/dashboard', consultorio: '/consultorio/dashboard' };
+const REDIRECT = {
+  paciente:    '/paciente/dashboard',
+  consultorio: '/consultorio/dashboard',
+};
+
+const BLANK = {
+  name: '', email: '', password: '', password_confirmation: '',
+  telefono: '', nombre: '', direccion: '', ciudad: '', cedula_profesional: '',
+};
 
 function RegisterForm() {
-  const params = useSearchParams();
-  const [role, setRole] = useState('paciente');
-  const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '', telefono: '', nombre: '', direccion: '', ciudad: '' });
-  const [error, setError]   = useState('');
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const { setUser }         = useAuth();
-  const router              = useRouter();
+  const params  = useSearchParams();
+  const router  = useRouter();
+  const { setUser, user, loading: authLoading } = useAuth();
+
+  const [role,       setRole]       = useState('paciente');
+  const [form,       setForm]       = useState(BLANK);
+  const [error,      setError]      = useState('');
+  const [errors,     setErrors]     = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [acepto,     setAcepto]     = useState(false);
 
   useEffect(() => { setRole(params.get('rol') || 'paciente'); }, [params]);
+
+  // Redirige si ya hay sesión activa
+  useEffect(() => {
+    if (!authLoading && user) router.replace(REDIRECT[user.role] ?? '/');
+  }, [user, authLoading, router]);
 
   const handle = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
+    if (!acepto) { setError('Debes aceptar la política de privacidad para continuar.'); return; }
+
     setError(''); setErrors({});
-    setLoading(true);
+    setSubmitting(true);
+
+    // Lee valores del DOM para capturar autofill del navegador
+    const domValues = {};
+    e.target.querySelectorAll('[name]').forEach(el => { domValues[el.name] = el.value; });
+
     try {
-      const { data } = await api.post('/register', { ...form, role });
+      const { data } = await api.post('/register', { ...form, ...domValues, role });
       localStorage.setItem('bb-token', data.token);
       setUser(data.user);
       router.push(REDIRECT[role] ?? '/');
@@ -37,71 +62,230 @@ function RegisterForm() {
       setError(err.message);
       setErrors(err.errors || {});
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const field = (name, label, type = 'text') => (
-    <div className="mb-3">
-      <label className="form-label">{label}</label>
-      <input name={name} type={type} className={`form-control ${errors[name] ? 'is-invalid' : ''}`} value={form[name]} onChange={handle} />
-      {errors[name] && <div className="invalid-feedback">{errors[name][0]}</div>}
-    </div>
-  );
+  if (authLoading) return <LoadingSpinner />;
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center bg-body-secondary py-4">
-      <div className="card shadow border-0 w-100" style={{ maxWidth: 500 }}>
-        <div className="card-body p-4">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-calendar2-check fs-4 text-primary" />
-              <span className="fw-bold fs-5">BeautyBook</span>
+    <PublicLayout>
+      <div className="auth-bg d-flex align-items-start justify-content-center p-3 pt-4">
+        <div className="card auth-card w-100" style={{ maxWidth: 540 }}>
+          <div className="card-body p-4 p-sm-5">
+
+            {/* Icono + título */}
+            <div className="text-center mb-4">
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
+                style={{
+                  width: 52, height: 52,
+                  background: 'linear-gradient(135deg, var(--bb-primary), var(--bb-primary-dark))',
+                  boxShadow: '0 4px 14px rgba(var(--bb-primary-rgb),.35)',
+                }}
+              >
+                <i className="bi bi-person-plus fs-4 text-white" />
+              </div>
+              <h5 className="fw-bold mb-1">Crear cuenta</h5>
+              <p className="text-muted small mb-0">Completa los datos para registrarte en BeautyBook.</p>
             </div>
-            <ThemeToggle />
+
+            {/* Selector de rol */}
+            <div className="btn-group w-100 mb-4" role="group" aria-label="Tipo de cuenta">
+              <button
+                type="button"
+                className={`btn ${role === 'paciente' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center justify-content-center gap-2`}
+                onClick={() => { setRole('paciente'); setErrors({}); setError(''); }}
+              >
+                <i className="bi bi-person" /> Paciente
+              </button>
+              <button
+                type="button"
+                className={`btn ${role === 'consultorio' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center justify-content-center gap-2`}
+                onClick={() => { setRole('consultorio'); setErrors({}); setError(''); }}
+              >
+                <i className="bi bi-building" /> Consultorio dental
+              </button>
+            </div>
+
+            <AppAlert type="danger" message={error} onClose={() => setError('')} />
+
+            <form onSubmit={submit} noValidate>
+
+              {/* ── Datos comunes ── */}
+              <FormField
+                label="Nombre completo"
+                name="name"
+                required
+                errors={errors}
+                value={form.name}
+                onChange={handle}
+                autoComplete="name"
+              />
+              <FormField
+                label="Correo electrónico"
+                name="email"
+                type="email"
+                required
+                errors={errors}
+                value={form.email}
+                onChange={handle}
+                autoComplete="email"
+              />
+              <PasswordField
+                label="Contraseña"
+                name="password"
+                required
+                errors={errors}
+                value={form.password}
+                onChange={handle}
+                autoComplete="new-password"
+              />
+              <PasswordField
+                label="Confirmar contraseña"
+                name="password_confirmation"
+                required
+                errors={errors}
+                value={form.password_confirmation}
+                onChange={handle}
+                autoComplete="new-password"
+              />
+
+              {/* ── Datos específicos del consultorio ── */}
+              {role === 'consultorio' && (
+                <>
+                  <hr className="my-3" />
+                  <p className="text-muted small fw-semibold text-uppercase mb-3"
+                    style={{ letterSpacing: '.06em', fontSize: '.7rem' }}>
+                    Datos del consultorio
+                  </p>
+
+                  {/* Teléfono requerido para consultorio */}
+                  <FormField
+                    label="Teléfono de contacto"
+                    name="telefono"
+                    type="tel"
+                    required
+                    errors={errors}
+                    value={form.telefono}
+                    onChange={handle}
+                    autoComplete="tel"
+                  />
+                  <FormField
+                    label="Nombre del consultorio"
+                    name="nombre"
+                    required
+                    errors={errors}
+                    value={form.nombre}
+                    onChange={handle}
+                  />
+                  <FormField
+                    label="Dirección"
+                    name="direccion"
+                    required
+                    errors={errors}
+                    value={form.direccion}
+                    onChange={handle}
+                    autoComplete="street-address"
+                  />
+                  <FormField
+                    label="Ciudad"
+                    name="ciudad"
+                    required
+                    errors={errors}
+                    value={form.ciudad}
+                    onChange={handle}
+                    autoComplete="address-level2"
+                  />
+
+                  {/* Verificación profesional */}
+                  <div className="mb-3">
+                    <label className="form-label fw-medium">
+                      Cédula profesional del titular
+                      <span className="text-danger ms-1">*</span>
+                    </label>
+                    <input
+                      name="cedula_profesional"
+                      type="text"
+                      className={`form-control ${errors.cedula_profesional ? 'is-invalid' : ''}`}
+                      value={form.cedula_profesional}
+                      onChange={handle}
+                      required
+                      minLength={7}
+                      maxLength={20}
+                    />
+                    {errors.cedula_profesional ? (
+                      <div className="invalid-feedback">{errors.cedula_profesional[0]}</div>
+                    ) : (
+                      <div className="form-text">
+                        <i className="bi bi-info-circle me-1" />
+                        Número de cédula emitida por la SEP. Será verificado por el administrador antes de activar tu cuenta.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Aviso de activación */}
+                  <div className="alert alert-info py-2 px-3 small d-flex align-items-start gap-2 mb-3">
+                    <i className="bi bi-clock-history flex-shrink-0 mt-1" />
+                    <span>
+                      Tu cuenta quedará <strong>pendiente de verificación</strong>. El administrador revisará
+                      tu cédula profesional y activará el consultorio en un plazo de 24–48 horas.
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* ── Política de privacidad ── */}
+              <div className="mb-4">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="checkPrivacidad"
+                    checked={acepto}
+                    onChange={e => setAcepto(e.target.checked)}
+                    required
+                  />
+                  <label className="form-check-label small" htmlFor="checkPrivacidad">
+                    He leído y acepto la{' '}
+                    <button
+                      type="button"
+                      className="btn btn-link btn-sm p-0 align-baseline text-primary fw-semibold"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalPrivacidad"
+                    >
+                      Política de Privacidad
+                    </button>
+                    {' '}de BeautyBook.
+                    <span className="text-danger ms-1">*</span>
+                  </label>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary w-100 py-2"
+                disabled={submitting || !acepto}
+                style={{ fontWeight: 600, letterSpacing: '.02em' }}
+              >
+                {submitting
+                  ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Creando cuenta…</>
+                  : <><i className="bi bi-person-check me-2" />Registrarse</>}
+              </button>
+            </form>
+
+            <p className="text-center text-muted small mt-4 mb-0">
+              ¿Ya tienes cuenta?{' '}
+              <Link href="/login" className="fw-semibold text-primary text-decoration-none">
+                Inicia sesión
+              </Link>
+            </p>
           </div>
-
-          <h5 className="mb-3">Crear cuenta</h5>
-
-          <div className="btn-group w-100 mb-4" role="group">
-            <button type="button" className={`btn btn-${role === 'paciente' ? 'primary' : 'outline-primary'} d-flex align-items-center justify-content-center gap-2`} onClick={() => setRole('paciente')}>
-              <i className="bi bi-person" /> Paciente
-            </button>
-            <button type="button" className={`btn btn-${role === 'consultorio' ? 'primary' : 'outline-primary'} d-flex align-items-center justify-content-center gap-2`} onClick={() => setRole('consultorio')}>
-              <i className="bi bi-building" /> Consultorio
-            </button>
-          </div>
-
-          <AppAlert type="danger" message={error} />
-
-          <form onSubmit={submit}>
-            {field('name', 'Nombre completo')}
-            {field('email', 'Correo electrónico', 'email')}
-            {field('telefono', 'Teléfono (opcional)', 'tel')}
-            {field('password', 'Contraseña', 'password')}
-            {field('password_confirmation', 'Confirmar contraseña', 'password')}
-
-            {role === 'consultorio' && (
-              <>
-                <hr className="my-3" />
-                <p className="text-muted small mb-3">Datos del consultorio</p>
-                {field('nombre', 'Nombre del consultorio')}
-                {field('direccion', 'Dirección')}
-                {field('ciudad', 'Ciudad')}
-              </>
-            )}
-
-            <button type="submit" className="btn btn-primary w-100 mt-2" disabled={loading}>
-              {loading ? <><span className="spinner-border spinner-border-sm me-2" />Creando cuenta…</> : 'Registrarse'}
-            </button>
-          </form>
-
-          <p className="text-center text-muted small mt-4 mb-0">
-            ¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link>
-          </p>
         </div>
       </div>
-    </div>
+
+      <PrivacyPolicyModal />
+    </PublicLayout>
   );
 }
 
