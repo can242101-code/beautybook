@@ -178,6 +178,11 @@ class CitaController extends Controller
 
         $cita->update(['estado' => $data['estado']]);
 
+        // Observer: al confirmar, notifica al paciente que su cita fue aceptada
+        if ($data['estado'] === 'confirmada') {
+            event(new NuevaCitaRegistrada($cita));
+        }
+
         return response()->json($cita->fresh(['paciente.user', 'consultorio', 'tratamiento']));
     }
 
@@ -251,6 +256,9 @@ class CitaController extends Controller
         // Limpiar caché de la fecha anterior y la nueva
         $this->limpiarCache($cita->consultorio_id, $cita->tratamiento_id, $fechaAnterior);
         $this->limpiarCache($cita->consultorio_id, $cita->tratamiento_id, $data['fecha']);
+
+        // Observer: notifica al consultorio del reagendamiento
+        event(new NuevaCitaRegistrada($actualizada));
 
         return response()->json($actualizada->fresh(['paciente.user', 'consultorio', 'tratamiento']));
     }
