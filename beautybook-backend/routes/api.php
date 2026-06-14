@@ -12,10 +12,12 @@ use App\Http\Controllers\Api\TratamientoController;
 use Illuminate\Support\Facades\Route;
 
 // Públicas
-Route::post('/register',         [AuthController::class,       'register']);
-Route::post('/login',            [AuthController::class,       'login']);
-Route::post('/forgot-password',  [PasswordResetController::class, 'sendLink']);
-Route::post('/reset-password',   [PasswordResetController::class, 'reset']);
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/login',           [AuthController::class,       'login']);
+    Route::post('/register',        [AuthController::class,       'register']);
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
+    Route::post('/reset-password',  [PasswordResetController::class, 'reset']);
+});
 Route::get('/consultorios',      [ConsultorioController::class, 'index']);
 Route::get('/consultorios/{id}', [ConsultorioController::class, 'show']);
 Route::get('/disponibilidad',      [DisponibilidadController::class, 'index']);

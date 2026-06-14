@@ -1,5 +1,9 @@
 'use client';
-// Página de acceso rápido — solo para desarrollo/demostración
+// Página de acceso rápido — solo disponible en entorno de desarrollo
+if (process.env.NODE_ENV === 'production') {
+  // En producción este módulo exporta null: la ruta devuelve página vacía
+}
+
 const CUENTAS = [
   {
     rol: 'Gestor / Admin',
@@ -28,6 +32,8 @@ const CUENTAS = [
 ];
 
 export default function DevLoginPage() {
+  if (process.env.NODE_ENV === 'production') return null;
+
   const entrar = (cuenta) => {
     localStorage.setItem('bb-token', cuenta.token);
     window.location.href = cuenta.destino;
