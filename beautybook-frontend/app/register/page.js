@@ -79,12 +79,12 @@ function RegisterForm() {
               <div
                 className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
                 style={{
-                  width: 52, height: 52,
+                  width: 56, height: 56,
                   background: 'linear-gradient(135deg, var(--bb-primary), var(--bb-primary-dark))',
-                  boxShadow: '0 4px 14px rgba(var(--bb-primary-rgb),.35)',
+                  boxShadow: '0 6px 20px rgba(var(--bb-primary-rgb),.40)',
                 }}
               >
-                <i className="bi bi-person-plus fs-4 text-white" />
+                <i className="bi bi-person-plus-fill fs-3 text-white" />
               </div>
               <h5 className="fw-bold mb-1">Crear cuenta</h5>
               <p className="text-muted small mb-0">Completa los datos para registrarte en BeautyBook.</p>
@@ -97,14 +97,14 @@ function RegisterForm() {
                 className={`btn ${role === 'paciente' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center justify-content-center gap-2`}
                 onClick={() => { setRole('paciente'); setErrors({}); setError(''); }}
               >
-                <i className="bi bi-person" /> Paciente
+                <i className="bi bi-person-fill" /> Paciente
               </button>
               <button
                 type="button"
                 className={`btn ${role === 'consultorio' ? 'btn-primary' : 'btn-outline-primary'} d-flex align-items-center justify-content-center gap-2`}
                 onClick={() => { setRole('consultorio'); setErrors({}); setError(''); }}
               >
-                <i className="bi bi-building" /> Consultorio dental
+                <i className="bi bi-hospital-fill" /> Consultorio dental
               </button>
             </div>
 
@@ -218,7 +218,7 @@ function RegisterForm() {
                       <div className="invalid-feedback">{errors.cedula_profesional[0]}</div>
                     ) : (
                       <div className="form-text">
-                        <i className="bi bi-info-circle me-1" />
+                        <i className="bi bi-info-circle-fill me-1 text-primary" />
                         Número de cédula emitida por la SEP. Será verificado por el administrador antes de activar tu cuenta.
                       </div>
                     )}
@@ -226,10 +226,10 @@ function RegisterForm() {
 
                   {/* Aviso de activación */}
                   <div className="alert alert-info py-2 px-3 small d-flex align-items-start gap-2 mb-3">
-                    <i className="bi bi-clock-history flex-shrink-0 mt-1" />
+                    <i className="bi bi-shield-check flex-shrink-0 mt-1" />
                     <span>
                       Tu cuenta quedará <strong>pendiente de verificación</strong>. El administrador revisará
-                      tu cédula profesional y activará el consultorio en un plazo de 24–48 horas.
+                      tu cédula profesional y recibirás un correo con un enlace de acceso en un plazo de 24–48 horas.
                     </span>
                   </div>
                 </>
@@ -270,7 +270,7 @@ function RegisterForm() {
               >
                 {submitting
                   ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Creando cuenta…</>
-                  : <><i className="bi bi-person-check me-2" />Registrarse</>}
+                  : <><i className="bi bi-person-check-fill me-2" />Registrarse</>}
               </button>
             </form>
 

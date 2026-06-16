@@ -142,8 +142,8 @@ export default function ConsultorioDashboard() {
           <div className="alert alert-warning d-flex align-items-center gap-2 mb-4">
             <i className="bi bi-exclamation-triangle-fill flex-shrink-0" />
             <span className="small">
-              Tu membrecía <strong>{membrecia.plan}</strong> vence en <strong>{dias === 0 ? 'hoy' : `${dias} día${dias !== 1 ? 's' : ''}`}</strong>.
-              Contacta al administrador para renovarla.
+              Tu membrecía <strong>{membrecia.plan}</strong> vence en <strong>{dias === 0 ? 'hoy' : `${dias} día${dias !== 1 ? 's' : ''}`}</strong>.{' '}
+              <a href="/consultorio/membrecia" className="alert-link">Renueva o cambia tu plan</a>.
             </span>
           </div>
         );

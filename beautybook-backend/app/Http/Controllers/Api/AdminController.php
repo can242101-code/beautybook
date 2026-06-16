@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ConsultorioActivado;
 use App\Models\Consultorio;
-use App\Models\Membrecia;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -23,33 +23,24 @@ class AdminController extends Controller
         return response()->json($consultorio);
     }
 
-    public function actualizarMembrecia(Request $request, int $id): JsonResponse
-    {
-        $data = $request->validate([
-            'plan'              => 'required|in:gratuito,basico,premium',
-            'dias_vigencia'     => 'required|integer|min:1|max:365',
-        ]);
-
-        $limites = ['gratuito' => 20, 'basico' => 100, 'premium' => 9999];
-
-        $membrecia = Membrecia::where('consultorio_id', $id)->firstOrFail();
-        $membrecia->update([
-            'plan'              => $data['plan'],
-            'limite_citas_mes'  => $limites[$data['plan']],
-            'fecha_inicio'      => Carbon::today(),
-            'fecha_vencimiento' => Carbon::today()->addDays($data['dias_vigencia']),
-            'activa'            => true,
-        ]);
-
-        return response()->json($membrecia);
-    }
-
     public function activarConsultorio(int $id): JsonResponse
     {
-        $consultorio = Consultorio::findOrFail($id);
+        $consultorio = Consultorio::with('user')->findOrFail($id);
         $consultorio->update(['activo' => true]);
         $consultorio->membrecia?->update(['activa' => true]);
-        return response()->json(['message' => 'Consultorio activado.']);
+
+        // Genera token de invitación válido por 48 h
+        $token = Str::random(48);
+        $consultorio->user->update([
+            'token_invitacion'            => $token,
+            'token_invitacion_expires_at' => now()->addHours(48),
+        ]);
+
+        // Envía notificación al consultorio con enlace de acceso directo
+        Mail::to($consultorio->user->email)
+            ->send(new ConsultorioActivado($consultorio->user, $token));
+
+        return response()->json(['message' => 'Consultorio activado. Se ha enviado la notificación por correo.']);
     }
 
     public function bloquearConsultorio(int $id): JsonResponse

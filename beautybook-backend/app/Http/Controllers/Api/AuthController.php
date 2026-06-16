@@ -53,11 +53,11 @@ class AuthController extends Controller
 
                 Membrecia::create([
                     'consultorio_id'    => $consultorio->id,
-                    'plan'              => 'gratuito',
+                    'plan'              => 'basico',
                     'limite_citas_mes'  => 20,
                     'fecha_inicio'      => Carbon::today(),
                     'fecha_vencimiento' => Carbon::today()->addYear(),
-                    'activa'            => true,
+                    'activa'            => false,
                 ]);
             } else {
                 Paciente::create(['user_id' => $user->id]);
@@ -92,6 +92,31 @@ class AuthController extends Controller
         return response()->json([
             'user'  => $user->load($this->relaciones($user->role)),
             'token' => $token,
+        ]);
+    }
+
+    public function loginConToken(string $token): JsonResponse
+    {
+        $user = User::where('token_invitacion', $token)
+            ->whereNotNull('token_invitacion_expires_at')
+            ->where('token_invitacion_expires_at', '>', now())
+            ->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Enlace inválido o expirado.'], 422);
+        }
+
+        // Consume el token — solo puede usarse una vez
+        $user->update([
+            'token_invitacion'            => null,
+            'token_invitacion_expires_at' => null,
+        ]);
+
+        $sanctumToken = $user->createToken('beautybook-invitacion')->plainTextToken;
+
+        return response()->json([
+            'user'  => $user->load($this->relaciones($user->role)),
+            'token' => $sanctumToken,
         ]);
     }
 

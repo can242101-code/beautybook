@@ -18,6 +18,7 @@ const LINKS = {
     { href: '/consultorio/estadisticas', label: 'Estadísticas',  icon: 'bi-bar-chart-line' },
     { href: '/consultorio/tratamientos', label: 'Tratamientos',  icon: 'bi-clipboard2-pulse' },
     { href: '/consultorio/horarios',     label: 'Horarios',      icon: 'bi-clock' },
+    { href: '/consultorio/membrecia',    label: 'Membrecía',     icon: 'bi-credit-card-fill' },
     { href: '/consultorio/perfil',       label: 'Perfil',        icon: 'bi-person-gear' },
   ],
   gestor: [

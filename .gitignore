@@ -8,3 +8,7 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Notas y reportes locales
+*.txt
+zap_report*.html

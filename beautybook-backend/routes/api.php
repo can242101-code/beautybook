@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ConsultorioController;
 use App\Http\Controllers\Api\DisponibilidadController;
 use App\Http\Controllers\Api\EstadisticasController;
 use App\Http\Controllers\Api\HorarioController;
+use App\Http\Controllers\Api\MembreciaController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\TratamientoController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,10 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
     Route::post('/reset-password',  [PasswordResetController::class, 'reset']);
 });
+// Login via enlace de invitación (token de un solo uso)
+Route::get('/acceso/{token}', [AuthController::class, 'loginConToken']);
+// Planes disponibles (pública para la página de precios)
+Route::get('/membrecia/planes', [MembreciaController::class, 'planes']);
 Route::get('/consultorios',      [ConsultorioController::class, 'index']);
 Route::get('/consultorios/{id}', [ConsultorioController::class, 'show']);
 Route::get('/disponibilidad',      [DisponibilidadController::class, 'index']);
@@ -59,14 +64,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/consultorio/pacientes',        [EstadisticasController::class, 'pacientes']);
         Route::get('/consultorio/pacientes/{id}',   [EstadisticasController::class, 'historialPaciente']);
         Route::get('/consultorio/estadisticas',     [EstadisticasController::class, 'estadisticas']);
+
+        // Membresía — autogestión del consultorio
+        Route::get('/consultorio/membrecia',        [MembreciaController::class, 'mi']);
+        Route::put('/consultorio/membrecia/plan',   [MembreciaController::class, 'cambiarPlan']);
     });
 
-    // Gestor (admin)
+    // Gestor (admin) — valida y bloquea consultorios, no gestiona planes
     Route::middleware('role:gestor')->prefix('admin')->group(function () {
-        Route::get('/consultorios',                     [AdminController::class, 'consultorios']);
-        Route::get('/consultorios/{id}',                [AdminController::class, 'showConsultorio']);
-        Route::put('/consultorios/{id}/membrecia',      [AdminController::class, 'actualizarMembrecia']);
-        Route::patch('/consultorios/{id}/activar',      [AdminController::class, 'activarConsultorio']);
-        Route::patch('/consultorios/{id}/bloquear',     [AdminController::class, 'bloquearConsultorio']);
+        Route::get('/consultorios',                 [AdminController::class, 'consultorios']);
+        Route::get('/consultorios/{id}',            [AdminController::class, 'showConsultorio']);
+        Route::patch('/consultorios/{id}/activar',  [AdminController::class, 'activarConsultorio']);
+        Route::patch('/consultorios/{id}/bloquear', [AdminController::class, 'bloquearConsultorio']);
     });
 });

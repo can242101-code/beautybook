@@ -28,7 +28,6 @@ function ConsultoriosContent() {
   const [busqueda,     setBusqueda]= useState('');
   const [filtro,       setFiltro]  = useState(params.get('filtro') ?? 'todos');
   const [seleccionado, setSelec]   = useState(null);
-  const [form,         setForm]    = useState({ plan: 'basico', dias_vigencia: 30 });
   const [msg,          setMsg]     = useState({ text: '', type: 'success' });
   const [loading,      setLoading] = useState(true);
 
@@ -62,18 +61,6 @@ function ConsultoriosContent() {
       c.cedula_profesional?.toLowerCase().includes(q)
     );
   }, [lista, filtro, busqueda]);
-
-  const actualizar = async (e) => {
-    e.preventDefault();
-    try {
-      await api.put(`/admin/consultorios/${seleccionado.id}/membrecia`, form);
-      setMsg({ text: 'Membrecía actualizada correctamente.', type: 'success' });
-      cargar();
-      document.getElementById('modalMembrecia')?.querySelector('[data-bs-dismiss]')?.click();
-    } catch (err) {
-      setMsg({ text: err.message, type: 'danger' });
-    }
-  };
 
   const activar = async (id) => {
     try {
@@ -245,26 +232,17 @@ function ConsultoriosContent() {
                             <button
                               className="btn btn-success btn-sm d-flex align-items-center gap-1"
                               onClick={() => activar(c.id)}
+                              title="Verifica la cédula y activa el consultorio. Se enviará un correo de notificación."
                             >
-                              <i className="bi bi-check2-circle" /> Activar
+                              <i className="bi bi-patch-check-fill" /> Validar
                             </button>
                           ) : (
-                            <>
-                              <button
-                                className="btn btn-outline-primary btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalMembrecia"
-                                onClick={() => setSelec(c)}
-                              >
-                                <i className="bi bi-credit-card me-1" />Membrecía
-                              </button>
-                              <button
-                                className="btn btn-outline-danger btn-sm"
-                                onClick={() => bloquear(c.id)}
-                              >
-                                <i className="bi bi-slash-circle me-1" />Bloquear
-                              </button>
-                            </>
+                            <button
+                              className="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                              onClick={() => bloquear(c.id)}
+                            >
+                              <i className="bi bi-slash-circle me-1" />Bloquear
+                            </button>
                           )}
                         </div>
                       </td>
@@ -283,79 +261,30 @@ function ConsultoriosContent() {
         </div>
       )}
 
-      {/* Modal membrecía */}
-      <AppModal
-        id="modalMembrecia"
-        title={`Membrecía — ${seleccionado?.nombre ?? ''}`}
-        footer={
-          <>
-            <button className="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button form="formMembrecia" type="submit" className="btn btn-primary">
-              <i className="bi bi-save me-1" />Guardar cambios
-            </button>
-          </>
-        }
-      >
-        <form id="formMembrecia" onSubmit={actualizar}>
-          <div className="mb-4">
-            <label className="form-label fw-medium">Plan de membrecía</label>
-            <div className="row g-2">
-              {[
-                { v: 'gratuito', label: 'Gratuito',  desc: '20 citas / mes',             icon: 'bi-gift',      color: '#64748b' },
-                { v: 'basico',   label: 'Básico',    desc: '100 citas / mes',             icon: 'bi-star',      color: 'var(--bb-primary)' },
-                { v: 'premium',  label: 'Premium',   desc: 'Ilimitado + notif. WhatsApp', icon: 'bi-lightning-charge-fill', color: '#d97706' },
-              ].map(p => (
-                <div key={p.v} className="col-12">
-                  <label
-                    className={`d-flex align-items-center gap-3 p-3 rounded-3 border cursor-pointer ${form.plan === p.v ? 'border-primary' : ''}`}
-                    style={{
-                      cursor: 'pointer',
-                      background: form.plan === p.v ? 'rgba(var(--bb-primary-rgb),.06)' : 'transparent',
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="plan_radio"
-                      className="form-check-input flex-shrink-0"
-                      checked={form.plan === p.v}
-                      onChange={() => setForm(f => ({ ...f, plan: p.v }))}
-                    />
-                    <i className={`bi ${p.icon}`} style={{ color: p.color, fontSize: '1.1rem', width: '1.2rem', textAlign: 'center' }} />
-                    <div>
-                      <div className="fw-semibold small">{p.label}</div>
-                      <div className="text-muted" style={{ fontSize: '.75rem' }}>{p.desc}</div>
-                    </div>
-                  </label>
-                </div>
-              ))}
+      {/* Detalle de plan — solo lectura */}
+      {seleccionado && (
+        <AppModal
+          id="modalDetallePlan"
+          title={`Detalle — ${seleccionado?.nombre ?? ''}`}
+          footer={<button className="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>}
+        >
+          <p className="text-muted small mb-3">
+            El plan es gestionado directamente por el consultorio desde su panel.
+          </p>
+          <div className="d-flex align-items-center gap-3 p-3 rounded-3 bg-body-secondary">
+            <i className="bi bi-credit-card-fill fs-3 text-primary" />
+            <div>
+              <div className="fw-semibold text-capitalize">{seleccionado.membrecia?.plan ?? '—'}</div>
+              <div className="text-muted small">
+                {seleccionado.membrecia?.limite_citas_mes ?? '—'} citas / mes ·
+                Vence: {seleccionado.membrecia?.fecha_vencimiento
+                  ? new Date(seleccionado.membrecia.fecha_vencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                  : '—'}
+              </div>
             </div>
           </div>
-
-          <div>
-            <label className="form-label fw-medium">Vigencia (días)</label>
-            <div className="d-flex gap-2 mb-2 flex-wrap">
-              {[30, 90, 180, 365].map(d => (
-                <button
-                  key={d}
-                  type="button"
-                  className={`btn btn-sm ${form.dias_vigencia == d ? 'btn-primary' : 'btn-outline-secondary'}`}
-                  onClick={() => setForm(f => ({ ...f, dias_vigencia: d }))}
-                >
-                  {d === 365 ? '1 año' : `${d} días`}
-                </button>
-              ))}
-            </div>
-            <input
-              type="number"
-              min="1"
-              max="365"
-              className="form-control form-control-sm"
-              value={form.dias_vigencia}
-              onChange={e => setForm(f => ({ ...f, dias_vigencia: Number(e.target.value) }))}
-            />
-          </div>
-        </form>
-      </AppModal>
+        </AppModal>
+      )}
     </>
   );
 }

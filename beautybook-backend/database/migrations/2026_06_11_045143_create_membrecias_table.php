@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('membrecias', function (Blueprint $table) {
             $table->id();
             $table->foreignId('consultorio_id')->constrained()->cascadeOnDelete();
-            $table->enum('plan', ['gratuito', 'basico', 'premium'])->default('gratuito');
+            $table->enum('plan', ['gratuito', 'basico', 'premium', 'pro'])->default('gratuito');
             $table->integer('limite_citas_mes')->default(20);
             $table->date('fecha_inicio');
             $table->date('fecha_vencimiento');

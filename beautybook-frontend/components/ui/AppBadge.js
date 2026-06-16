@@ -6,8 +6,9 @@ const ESTADO_COLOR = {
   activa:     'success',
   vencida:    'danger',
   gratuito:   'secondary',
-  basico:     'primary',
-  premium:    'warning',
+  basico:     'secondary',
+  premium:    'primary',
+  pro:        'warning',
 };
 
 export default function AppBadge({ text, variant }) {
