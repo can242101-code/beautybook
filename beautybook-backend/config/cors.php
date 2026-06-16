@@ -14,10 +14,11 @@ return [
      * Orígenes permitidos en desarrollo.
      * En producción cambia a la URL real del frontend.
      */
-    'allowed_origins' => [
+    'allowed_origins' => array_filter(array_unique([
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-    ],
+        env('FRONTEND_URL'),
+    ])),
 
     'allowed_origins_patterns' => [],
 
