@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\TratamientoController;
 use Illuminate\Support\Facades\Route;
 
+// Keepalive — sin throttle para que el ping no se bloquee
+Route::get('/health', fn() => response()->json(['status' => 'ok']));
+
 // Públicas
 Route::middleware('throttle:10,1')->group(function () {
     Route::post('/login',           [AuthController::class,       'login']);

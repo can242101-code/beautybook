@@ -1,6 +1,6 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-async function request(method, endpoint, body = null) {
+async function request(method, endpoint, body = null, _retry = true) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('bb-token') : null;
 
   const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
@@ -14,7 +14,12 @@ async function request(method, endpoint, body = null) {
       body: body !== null ? JSON.stringify(body) : undefined,
     });
   } catch {
-    const err = new Error('No se pudo conectar con el servidor. Verifica que el backend esté activo.');
+    // Reintentar una vez automáticamente (el servidor puede estar en arranque en frío)
+    if (_retry) {
+      await new Promise(r => setTimeout(r, 3000));
+      return request(method, endpoint, body, false);
+    }
+    const err = new Error('El servidor tardó en responder. Intenta de nuevo en unos segundos.');
     err.status = 0;
     throw err;
   }
