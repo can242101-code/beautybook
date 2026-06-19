@@ -43,6 +43,8 @@ next-env.d.ts
 # scripts locales de desarrollo
 test-roles.mjs
 test-produccion.mjs
+test-calificacion.mjs
+test-recuperar-contrasena.mjs
 
 # páginas de acceso rápido solo para desarrollo
 /app/dev-login/

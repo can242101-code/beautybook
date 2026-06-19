@@ -14,6 +14,7 @@ class Cita extends Model
     protected $fillable = [
         'paciente_id', 'consultorio_id', 'tratamiento_id',
         'fecha', 'hora_inicio', 'hora_fin', 'estado', 'notas',
+        'calificacion', 'comentario_calificacion',
     ];
 
     protected $dispatchesEvents = [
