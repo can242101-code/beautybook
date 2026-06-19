@@ -64,11 +64,9 @@ El frontend queda disponible en `http://localhost:3000`.
 
 | Rol | Correo | Contraseña |
 |-----|--------|------------|
-| Gestor (admin) | gestor@beautybook.com | Demo1234! |
-| Paciente | karla.paciente@beautybook.com | Demo1234! |
+| Gestor (admin) | gestor@beautybook.com | Gestor1234! |
+| Paciente | demo_pac@beautybook.com | Demo1234! |
 | Consultorio | demo_cons@beautybook.com | Demo1234! |
-
-> En desarrollo: `/dev-login` permite entrar a cualquier rol con un clic.
 
 ## Ejecutar tests
 
