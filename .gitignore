@@ -12,3 +12,8 @@ desktop.ini
 # Notas y reportes locales
 *.txt
 zap_report*.html
+
+# Scripts locales de prueba
+test-produccion.mjs
+test-roles.mjs
+capturas-produccion/
