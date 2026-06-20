@@ -5,10 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import AppBadge from '@/components/ui/AppBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { PLAN_LABEL, PLAN_COLOR } from '@/lib/constants';
+import { getSaludo, diasHastaVencer } from '@/lib/utils';
 
-const hoy    = new Date();
-const en7d   = new Date(hoy); en7d.setDate(hoy.getDate() + 7);
-const PLAN_LABEL = { gratuito: 'Gratuito', basico: 'Básico', premium: 'Premium', pro: 'Pro' };
+const hoy  = new Date();
+const en7d = new Date(hoy); en7d.setDate(hoy.getDate() + 7);
 
 function StatCard({ icon, label, value, color, bg }) {
   return (
@@ -61,8 +62,7 @@ export default function AdminDashboard() {
     return { pendientes, activos, vencidos, porVencer, recientes };
   }, [lista]);
 
-  const hora = new Date().getHours();
-  const saludo = hora < 12 ? 'Buenos días' : hora < 18 ? 'Buenas tardes' : 'Buenas noches';
+  const saludo = getSaludo();
 
   return (
     <>
@@ -214,9 +214,7 @@ export default function AdminDashboard() {
                   ) : (
                     <ul className="list-group list-group-flush">
                       {stats.porVencer.map(c => {
-                        const dias = Math.ceil(
-                          (new Date(c.membrecia.fecha_vencimiento) - hoy) / (1000 * 60 * 60 * 24)
-                        );
+                        const dias = diasHastaVencer(c.membrecia.fecha_vencimiento);
                         return (
                           <li key={c.id} className="list-group-item px-4 py-3">
                             <div className="d-flex align-items-center justify-content-between gap-2">
@@ -253,19 +251,17 @@ export default function AdminDashboard() {
                 {['gratuito', 'basico', 'premium'].map(plan => {
                   const count = lista.filter(c => c.membrecia?.plan === plan).length;
                   const pct   = lista.length ? Math.round((count / lista.length) * 100) : 0;
-                  const colores  = { gratuito: '#64748b', basico: 'var(--bb-primary)', premium: '#d97706' };
-                  const etiqueta = { gratuito: 'Gratuito', basico: 'Básico', premium: 'Premium' };
                   return (
                     <div key={plan} className="col-md-4">
                       <div className="d-flex align-items-center justify-content-between mb-1">
-                        <span className="fw-medium small">{etiqueta[plan]}</span>
+                        <span className="fw-medium small">{PLAN_LABEL[plan]}</span>
                         <span className="text-muted small">{count} ({pct}%)</span>
                       </div>
                       <div className="progress" style={{ height: 8, borderRadius: 99 }}>
                         <div
                           className="progress-bar"
                           role="progressbar"
-                          style={{ width: `${pct}%`, background: colores[plan], borderRadius: 99 }}
+                          style={{ width: `${pct}%`, background: PLAN_COLOR[plan], borderRadius: 99 }}
                           aria-valuenow={pct}
                           aria-valuemin="0"
                           aria-valuemax="100"

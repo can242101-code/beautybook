@@ -23,6 +23,14 @@ export const fmtFechaCorta = (f) => {
   });
 };
 
+export const getSaludo = () => {
+  const h = new Date().getHours();
+  return h < 12 ? 'Buenos días' : h < 18 ? 'Buenas tardes' : 'Buenas noches';
+};
+
+export const diasHastaVencer = (fecha) =>
+  fecha ? Math.ceil((new Date(fecha) - new Date()) / 864e5) : null;
+
 export const fmtFechaLarga = (f) => {
   const d = soloFecha(f);
   if (!d) return '—';

@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { api } from '@/lib/api';
 import AppAlert from '@/components/ui/AppAlert';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { diasHastaVencer } from '@/lib/utils';
 
 const PLANES_INFO = [
   {
@@ -101,9 +102,7 @@ export default function MembreciaPage() {
     }
   };
 
-  const diasRestantes = membrecia?.fecha_vencimiento
-    ? Math.ceil((new Date(membrecia.fecha_vencimiento) - new Date()) / 864e5)
-    : null;
+  const diasRestantes = diasHastaVencer(membrecia?.fecha_vencimiento);
 
   if (loading) return <LoadingSpinner />;
 

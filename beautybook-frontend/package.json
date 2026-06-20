@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "deploy": "vercel --prod --yes && vercel alias set beautybook-frontend.vercel.app beautybook-dental.vercel.app",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },

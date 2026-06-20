@@ -7,6 +7,7 @@ import AppAlert from '@/components/ui/AppAlert';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 import { ESTADO_COLOR } from '@/lib/constants';
+import { diasHastaVencer } from '@/lib/utils';
 
 export default function ConsultorioDashboard() {
   const { user }              = useAuth();
@@ -137,7 +138,7 @@ export default function ConsultorioDashboard() {
 
       {/* Alerta si membrecía vence pronto */}
       {membrecia?.fecha_vencimiento && (() => {
-        const dias = Math.ceil((new Date(membrecia.fecha_vencimiento) - new Date()) / 864e5);
+        const dias = diasHastaVencer(membrecia.fecha_vencimiento);
         if (dias <= 7 && dias >= 0) return (
           <div className="alert alert-warning d-flex align-items-center gap-2 mb-4">
             <i className="bi bi-exclamation-triangle-fill flex-shrink-0" />

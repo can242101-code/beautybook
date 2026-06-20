@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import AppBadge from '@/components/ui/AppBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
-import { fmtFecha } from '@/lib/utils';
+import { fmtFecha, getSaludo } from '@/lib/utils';
 
 export default function PacienteDashboard() {
   const { user }              = useAuth();
@@ -30,8 +30,7 @@ export default function PacienteDashboard() {
     { label: 'Canceladas',  value: canceladas.length,  color: '#dc2626',        bg: 'rgba(220,38,38,.12)',        icon: 'bi-x-circle' },
   ];
 
-  const hora = new Date().getHours();
-  const saludo = hora < 12 ? 'Buenos días' : hora < 18 ? 'Buenas tardes' : 'Buenas noches';
+  const saludo = getSaludo();
 
   return (
     <>

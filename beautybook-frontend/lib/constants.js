@@ -23,3 +23,33 @@ export const ESTADO_COLOR = {
   completada: { text: '#64748b', bg: 'rgba(100,116,139,.1)', icon: 'bi-check2-all'     },
   cancelada:  { text: '#dc2626', bg: 'rgba(220,38,38,.1)',   icon: 'bi-x-circle'       },
 };
+
+// Variantes Bootstrap para badges (AppBadge)
+export const BADGE_VARIANT = {
+  pendiente:  'warning',
+  confirmada: 'success',
+  cancelada:  'danger',
+  completada: 'secondary',
+  activa:     'success',
+  vencida:    'danger',
+  gratuito:   'secondary',
+  basico:     'secondary',
+  premium:    'primary',
+  pro:        'warning',
+};
+
+// Etiquetas legibles para planes (con acento)
+export const PLAN_LABEL = {
+  gratuito: 'Gratuito',
+  basico:   'Básico',
+  premium:  'Premium',
+  pro:      'Pro',
+};
+
+// Colores de acento para cada plan (gráficas / barras de progreso)
+export const PLAN_COLOR = {
+  gratuito: '#64748b',
+  basico:   'var(--bb-primary)',
+  premium:  '#d97706',
+  pro:      '#16a34a',
+};
