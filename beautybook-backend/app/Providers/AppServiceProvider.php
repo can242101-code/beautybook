@@ -11,7 +11,9 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mailer\Bridge\Brevo\Transport\BrevoApiTransport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Registra transporte HTTP de Brevo (evita bloqueo de puertos SMTP en Railway)
+        Mail::extend('brevo', function (array $config) {
+            return new BrevoApiTransport($config['key'] ?? '');
+        });
+
         // Patrón Observer — escucha eventos de citas y despacha notificaciones.
         Event::listen(NuevaCitaRegistrada::class, EnviarNotificacionNuevaCita::class);
         Event::listen(CitaCancelada::class,       EnviarNotificacionCitaCancelada::class);
