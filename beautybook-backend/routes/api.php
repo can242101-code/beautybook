@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
 // Públicas
-Route::middleware('throttle:10,1')->group(function () {
+Route::middleware('throttle:30,1')->group(function () {
     Route::post('/login',           [AuthController::class,       'login']);
     Route::post('/register',        [AuthController::class,       'register']);
     Route::post('/forgot-password', [PasswordResetController::class, 'sendLink']);
