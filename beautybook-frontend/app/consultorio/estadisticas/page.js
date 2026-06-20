@@ -73,7 +73,7 @@ export default function EstadisticasPage() {
                       <span className="badge bg-primary bg-opacity-10 text-primary rounded-pill me-2">{i + 1}</span>
                       {t.nombre}
                     </span>
-                    <span className="small text-muted fw-semibold">{t.total} citas</span>
+                    <span className="small text-muted fw-semibold">{t.total} {t.total === 1 ? 'cita' : 'citas'}</span>
                   </div>
                   <div className="progress" style={{ height: 8, borderRadius: 4 }}>
                     <div

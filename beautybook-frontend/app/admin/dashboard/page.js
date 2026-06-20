@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const hoy    = new Date();
 const en7d   = new Date(hoy); en7d.setDate(hoy.getDate() + 7);
+const PLAN_LABEL = { gratuito: 'Gratuito', basico: 'Básico', premium: 'Premium', pro: 'Pro' };
 
 function StatCard({ icon, label, value, color, bg }) {
   return (
@@ -222,7 +223,7 @@ export default function AdminDashboard() {
                               <div>
                                 <div className="fw-semibold" style={{ fontSize: '.875rem' }}>{c.nombre}</div>
                                 <div className="text-muted" style={{ fontSize: '.75rem' }}>
-                                  Plan {c.membrecia.plan}
+                                  Plan {PLAN_LABEL[c.membrecia.plan] ?? c.membrecia.plan}
                                 </div>
                               </div>
                               <span
@@ -252,11 +253,12 @@ export default function AdminDashboard() {
                 {['gratuito', 'basico', 'premium'].map(plan => {
                   const count = lista.filter(c => c.membrecia?.plan === plan).length;
                   const pct   = lista.length ? Math.round((count / lista.length) * 100) : 0;
-                  const colores = { gratuito: '#64748b', basico: 'var(--bb-primary)', premium: '#d97706' };
+                  const colores  = { gratuito: '#64748b', basico: 'var(--bb-primary)', premium: '#d97706' };
+                  const etiqueta = { gratuito: 'Gratuito', basico: 'Básico', premium: 'Premium' };
                   return (
                     <div key={plan} className="col-md-4">
                       <div className="d-flex align-items-center justify-content-between mb-1">
-                        <span className="text-capitalize fw-medium small">{plan}</span>
+                        <span className="fw-medium small">{etiqueta[plan]}</span>
                         <span className="text-muted small">{count} ({pct}%)</span>
                       </div>
                       <div className="progress" style={{ height: 8, borderRadius: 99 }}>

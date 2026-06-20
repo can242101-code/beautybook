@@ -11,9 +11,13 @@ const ESTADO_COLOR = {
   pro:        'warning',
 };
 
+const LABEL_MAP = { basico: 'Básico' };
+
 export default function AppBadge({ text, variant }) {
-  const color = variant || ESTADO_COLOR[text?.toLowerCase()] || 'secondary';
+  const key   = text?.toLowerCase();
+  const color = variant || ESTADO_COLOR[key] || 'secondary';
+  const label = LABEL_MAP[key] ?? text;
   return (
-    <span className={`badge bg-${color} text-capitalize`}>{text}</span>
+    <span className={`badge bg-${color} text-capitalize`}>{label}</span>
   );
 }

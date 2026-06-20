@@ -130,7 +130,7 @@ export default function MembreciaPage() {
               </div>
               <div>
                 <div className="text-muted small mb-1">Plan actual</div>
-                <div className="fw-bold fs-5 text-capitalize">{membrecia.plan}</div>
+                <div className="fw-bold fs-5">{PLANES_INFO.find(p => p.key === membrecia.plan)?.label ?? membrecia.plan}</div>
                 <div className="text-muted small">
                   {membrecia.limite_citas_mes >= 9999 ? 'Citas ilimitadas' : `${membrecia.limite_citas_mes} citas / mes`}
                 </div>
