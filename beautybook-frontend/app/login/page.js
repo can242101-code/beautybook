@@ -20,15 +20,34 @@ export default function LoginPage() {
   const [showPass,   setShowPass]   = useState(false);
   const [error,      setError]      = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [servidor,   setServidor]   = useState('verificando'); // 'verificando' | 'listo' | 'lento'
+  const [reintentoMsg, setReintentoMsg] = useState('');
 
   const { login, user, loading } = useAuth();
   const router = useRouter();
 
-  // Pre-calentar el backend de Railway para evitar cold starts
+  // Pre-calentar el backend y mostrar estado de conexión
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch(`${API_BASE}/health`, { signal: ctrl.signal }).catch(() => {});
-    return () => ctrl.abort();
+    const t0 = Date.now();
+    fetch(`${API_BASE}/health`, { signal: ctrl.signal })
+      .then(r => {
+        if (r.ok) setServidor(Date.now() - t0 > 4000 ? 'lento' : 'listo');
+      })
+      .catch(() => setServidor('lento'));
+    // Si tarda más de 4s, avisa que el servidor está arrancando
+    const aviso = setTimeout(() => setServidor('lento'), 4000);
+    return () => { ctrl.abort(); clearTimeout(aviso); };
+  }, []);
+
+  // Escuchar reintentos de api.js para actualizar el botón
+  useEffect(() => {
+    const onReintento = (e) => {
+      const { intento, total } = e.detail;
+      setReintentoMsg(`Reintentando (${intento}/${total})…`);
+    };
+    window.addEventListener('api:reintento', onReintento);
+    return () => window.removeEventListener('api:reintento', onReintento);
   }, []);
 
   useEffect(() => {
@@ -38,6 +57,7 @@ export default function LoginPage() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
+    setReintentoMsg('');
     setSubmitting(true);
     try {
       const loggedUser = await login(email.trim(), password);
@@ -47,6 +67,7 @@ export default function LoginPage() {
       setError(msg);
     } finally {
       setSubmitting(false);
+      setReintentoMsg('');
     }
   };
 
@@ -73,6 +94,14 @@ export default function LoginPage() {
               <h5 className="fw-bold mb-1">Iniciar sesión</h5>
               <p className="text-muted small mb-0">Accede a tu cuenta para continuar.</p>
             </div>
+
+            {/* Estado del servidor */}
+            {servidor === 'lento' && !submitting && (
+              <div className="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+                <span className="spinner-border spinner-border-sm flex-shrink-0" role="status" />
+                <span>El servidor está iniciando, puede tardar unos segundos…</span>
+              </div>
+            )}
 
             <AppAlert type="danger" message={error} onClose={() => setError('')} />
 
@@ -136,7 +165,7 @@ export default function LoginPage() {
                 style={{ fontWeight: 600, letterSpacing: '.02em' }}
               >
                 {submitting
-                  ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Ingresando…</>
+                  ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />{reintentoMsg || 'Ingresando…'}</>
                   : <><i className="bi bi-box-arrow-in-right me-2" />Ingresar</>}
               </button>
             </form>
