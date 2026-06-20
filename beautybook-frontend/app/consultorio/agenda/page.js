@@ -8,7 +8,7 @@ import { fmtISO, fmtFechaLarga as fmtLarg } from '@/lib/utils';
 import { ESTADO_COLOR } from '@/lib/constants';
 
 export default function AgendaPage() {
-  const [fecha,   setFecha]   = useState(fmtISO(new Date()));
+  const [fecha,   setFecha]   = useState('');        // se inicializa en el cliente vía useEffect
   const [citas,   setCitas]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg,     setMsg]     = useState({ text: '', type: 'success' });
@@ -21,7 +21,9 @@ export default function AgendaPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { cargar(fecha); }, [fecha]);
+  // Inicializar con la fecha local del cliente (no SSR) para evitar diferencia UTC
+  useEffect(() => { if (!fecha) setFecha(fmtISO(new Date())); }, [fecha]);
+  useEffect(() => { if (fecha) cargar(fecha); }, [fecha]);
 
   const irDia = (delta) => {
     const d = new Date(`${fecha}T12:00:00`);
@@ -50,7 +52,8 @@ export default function AgendaPage() {
     }
   };
 
-  const esHoy = fecha === fmtISO(new Date());
+  const hoyLocal = fmtISO(new Date());
+  const esHoy = fecha === hoyLocal;
 
   const STATS = [
     { label: 'Total',       value: citas.length,                                        color: 'var(--bb-p)', bg: 'rgba(var(--bb-p-rgb),.1)', icon: 'bi-calendar3' },
@@ -79,7 +82,7 @@ export default function AgendaPage() {
             <i className="bi bi-chevron-right" />
           </button>
           {!esHoy && (
-            <button className="btn btn-outline-primary btn-sm" onClick={() => setFecha(fmtISO(new Date()))}>
+            <button className="btn btn-outline-primary btn-sm" onClick={() => setFecha(hoyLocal)}>
               Hoy
             </button>
           )}
