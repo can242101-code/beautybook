@@ -123,8 +123,8 @@ export default function ConsultorioDashboard() {
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-5">
         <div>
           <h3 className="fw-bold mb-1">{user?.consultorio?.nombre ?? user?.name}</h3>
-          <p className="text-muted mb-0 small text-capitalize">
-            {new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <p className="text-muted mb-0 small">
+            {(() => { const s = new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); })()}
           </p>
         </div>
         <div className="d-flex align-items-center gap-2 flex-wrap">

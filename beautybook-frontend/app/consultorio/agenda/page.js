@@ -65,7 +65,7 @@ export default function AgendaPage() {
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
         <div>
           <h3 className="fw-bold mb-0">Agenda</h3>
-          <p className="text-muted mb-0 small text-capitalize">{fmtLarg(fecha)}</p>
+          <p className="text-muted mb-0 small">{fmtLarg(fecha)}</p>
         </div>
         <div className="d-flex align-items-center gap-2">
           <button className="btn btn-outline-secondary btn-sm" onClick={() => irDia(-1)}>
