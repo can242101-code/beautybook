@@ -1,4 +1,8 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// En el navegador: proxy de Vercel (evita CORS, funciona con cualquier alias de URL)
+// En SSR/servidor: Railway directo
+export const API_BASE = typeof window !== 'undefined'
+  ? '/api/proxy'
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api');
 
 const TIMEOUT_MS  = 15_000;  // 15s por intento
 const RETRY_DELAY = 4_000;
