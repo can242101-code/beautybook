@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import AppAlert from '@/components/ui/AppAlert';
 import PublicLayout from '@/components/layout/PublicLayout';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { API_BASE } from '@/lib/api';
 
 const REDIRECT = {
   paciente:    '/paciente/dashboard',
@@ -22,6 +23,13 @@ export default function LoginPage() {
 
   const { login, user, loading } = useAuth();
   const router = useRouter();
+
+  // Pre-calentar el backend de Railway para evitar cold starts
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch(`${API_BASE}/health`, { signal: ctrl.signal }).catch(() => {});
+    return () => ctrl.abort();
+  }, []);
 
   useEffect(() => {
     if (!loading && user) router.replace(REDIRECT[user.role] ?? '/');
@@ -78,6 +86,7 @@ export default function LoginPage() {
                   </span>
                   <input
                     type="email"
+                    name="email"
                     className="form-control"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
@@ -101,6 +110,7 @@ export default function LoginPage() {
                   </span>
                   <input
                     type={showPass ? 'text' : 'password'}
+                    name="password"
                     className="form-control"
                     value={password}
                     onChange={e => setPassword(e.target.value)}

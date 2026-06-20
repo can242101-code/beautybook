@@ -1,34 +1,41 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-async function request(method, endpoint, body = null, _retry = true) {
+const TIMEOUT_MS  = 12_000;
+const RETRY_DELAY = 5_000;
+const MAX_RETRIES = 2;
+
+async function request(method, endpoint, body = null, attempt = 0) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('bb-token') : null;
 
   const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   let res;
   try {
-    res = await fetch(`${BASE_URL}${endpoint}`, {
+    res = await fetch(`${API_BASE}${endpoint}`, {
       method,
       headers,
       body: body !== null ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
     });
   } catch {
-    // Reintentar una vez automáticamente (el servidor puede estar en arranque en frío)
-    if (_retry) {
-      await new Promise(r => setTimeout(r, 3000));
-      return request(method, endpoint, body, false);
+    clearTimeout(timer);
+    if (attempt < MAX_RETRIES) {
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
+      return request(method, endpoint, body, attempt + 1);
     }
     const err = new Error('El servidor tardó en responder. Intenta de nuevo en unos segundos.');
     err.status = 0;
     throw err;
   }
+  clearTimeout(timer);
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('bb-token');
-      // Notifica a AuthContext para limpiar el estado y redirigir al login.
-      // Esto cubre tanto la verificación inicial como la expiración mid-session.
       window.dispatchEvent(new CustomEvent('bb:session-expired'));
     }
     const err = new Error('Sesión expirada. Por favor inicia sesión de nuevo.');
