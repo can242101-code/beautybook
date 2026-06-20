@@ -20,7 +20,10 @@ return [
         env('FRONTEND_URL'),
     ])),
 
-    'allowed_origins_patterns' => [],
+    // Permite cualquier alias del proyecto BeautyBook en Vercel
+    'allowed_origins_patterns' => [
+        '#^https://beautybook-[a-z0-9-]+\.vercel\.app$#',
+    ],
 
     'allowed_headers' => ['*'],
 
