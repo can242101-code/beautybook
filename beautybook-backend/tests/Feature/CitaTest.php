@@ -38,7 +38,7 @@ class CitaTest extends TestCase
 
         Membrecia::create([
             'consultorio_id'   => $consultorio->id,
-            'plan'             => 'gratuito',
+            'plan'             => 'basico',
             'limite_citas_mes' => 20,
             'fecha_inicio'     => Carbon::yesterday(),
             'fecha_vencimiento'=> $membreciaVigente ? Carbon::now()->addMonth() : Carbon::yesterday(),
@@ -279,5 +279,160 @@ class CitaTest extends TestCase
 
         // No se creó ninguna cita
         $this->assertDatabaseCount('citas', 0);
+    }
+
+    // ── CV06 — Límite mensual plan básico bloquea nueva cita → HTTP 422 ──────
+
+    public function test_cv06_limite_mensual_bloquea_cita_al_alcanzar_cupo(): void
+    {
+        $userC = User::create([
+            'name'     => 'Clínica Límite',
+            'email'    => 'limite@test.com',
+            'password' => bcrypt('pass'),
+            'role'     => 'consultorio',
+        ]);
+
+        $consultorio = Consultorio::create([
+            'user_id'   => $userC->id,
+            'nombre'    => 'Clínica Límite',
+            'direccion' => 'Calle Test 1',
+            'ciudad'    => 'CDMX',
+            'activo'    => true,
+        ]);
+
+        // Límite de 1 cita/mes para facilitar la prueba
+        Membrecia::create([
+            'consultorio_id'   => $consultorio->id,
+            'plan'             => 'basico',
+            'limite_citas_mes' => 1,
+            'fecha_inicio'     => Carbon::today(),
+            'fecha_vencimiento'=> Carbon::today()->addYear(),
+            'activa'           => true,
+        ]);
+
+        $fechaLunes = Carbon::now()->next(Carbon::MONDAY)->format('Y-m-d');
+
+        Horario::create([
+            'consultorio_id' => $consultorio->id,
+            'dia_semana'     => 'lunes',
+            'hora_inicio'    => '09:00',
+            'hora_fin'       => '17:00',
+            'activo'         => true,
+        ]);
+
+        $userP = $this->crearPaciente();
+
+        $tratamiento = Tratamiento::create([
+            'consultorio_id'   => $consultorio->id,
+            'nombre'           => 'Revisión',
+            'duracion_minutos' => 30,
+            'precio'           => 350.00,
+            'activo'           => true,
+        ]);
+
+        // Primera cita: ocupa el único cupo del mes
+        $this->actingAs($userP, 'sanctum')
+            ->postJson('/api/citas', [
+                'consultorio_id' => $consultorio->id,
+                'tratamiento_id' => $tratamiento->id,
+                'fecha'          => $fechaLunes,
+                'hora_inicio'    => '09:00',
+            ])
+            ->assertStatus(201);
+
+        // Segunda cita: debe ser rechazada por límite mensual
+        $this->actingAs($userP, 'sanctum')
+            ->postJson('/api/citas', [
+                'consultorio_id' => $consultorio->id,
+                'tratamiento_id' => $tratamiento->id,
+                'fecha'          => $fechaLunes,
+                'hora_inicio'    => '10:00',
+            ])
+            ->assertStatus(422)
+            ->assertJsonFragment([
+                'message' => 'Este consultorio ha alcanzado el límite de citas de su plan para este mes.',
+            ]);
+
+        $this->assertDatabaseCount('citas', 1);
+    }
+
+    // ── CV07 — Plan pro (límite=9999) no bloquea citas aunque supere límite básico ─
+
+    public function test_cv07_plan_pro_no_tiene_limite_mensual(): void
+    {
+        $userC = User::create([
+            'name'     => 'Clínica Pro',
+            'email'    => 'pro@test.com',
+            'password' => bcrypt('pass'),
+            'role'     => 'consultorio',
+        ]);
+
+        $consultorio = Consultorio::create([
+            'user_id'   => $userC->id,
+            'nombre'    => 'Clínica Pro',
+            'direccion' => 'Calle Pro 1',
+            'ciudad'    => 'Monterrey',
+            'activo'    => true,
+        ]);
+
+        Membrecia::create([
+            'consultorio_id'   => $consultorio->id,
+            'plan'             => 'pro',
+            'limite_citas_mes' => 9999,
+            'fecha_inicio'     => Carbon::today(),
+            'fecha_vencimiento'=> Carbon::today()->addYear(),
+            'activa'           => true,
+        ]);
+
+        $fechaLunes = Carbon::now()->next(Carbon::MONDAY)->format('Y-m-d');
+
+        Horario::create([
+            'consultorio_id' => $consultorio->id,
+            'dia_semana'     => 'lunes',
+            'hora_inicio'    => '09:00',
+            'hora_fin'       => '17:00',
+            'activo'         => true,
+        ]);
+
+        $userP = $this->crearPaciente();
+
+        $tratamiento = Tratamiento::create([
+            'consultorio_id'   => $consultorio->id,
+            'nombre'           => 'Revisión Pro',
+            'duracion_minutos' => 30,
+            'precio'           => 350.00,
+            'activo'           => true,
+        ]);
+
+        // Insertar 21 citas directamente (supera el límite de básico=20)
+        // Todas en el mismo slot 09:00-09:30 — la inserción directa omite el
+        // chequeo de conflictos, pero contarMes() las contará igual.
+        $rows = [];
+        for ($i = 0; $i < 21; $i++) {
+            $rows[] = [
+                'consultorio_id' => $consultorio->id,
+                'paciente_id'    => $userP->paciente->id,
+                'tratamiento_id' => $tratamiento->id,
+                'fecha'          => $fechaLunes,
+                'hora_inicio'    => '09:00',
+                'hora_fin'       => '09:30',
+                'estado'         => 'pendiente',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ];
+        }
+        \App\Models\Cita::insert($rows);
+
+        // contarMes devuelve 21, que superaría el límite de básico (20).
+        // Con plan pro (9999 < 9999 → false) el check se salta: la cita se acepta.
+        // Usamos 14:00 para no chocar con las de 09:00-09:30.
+        $this->actingAs($userP, 'sanctum')
+            ->postJson('/api/citas', [
+                'consultorio_id' => $consultorio->id,
+                'tratamiento_id' => $tratamiento->id,
+                'fecha'          => $fechaLunes,
+                'hora_inicio'    => '14:00',
+            ])
+            ->assertStatus(201);
     }
 }

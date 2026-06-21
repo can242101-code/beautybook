@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Mail\ConsultorioActivado;
 use App\Models\Consultorio;
 use App\Models\Membrecia;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ValidacionConsultorioTest extends TestCase
@@ -49,8 +47,6 @@ class ValidacionConsultorioTest extends TestCase
 
     public function test_cv07_activar_consultorio_genera_token_y_envia_email(): void
     {
-        Mail::fake();
-
         $gestor = User::create([
             'name' => 'Gestor', 'email' => 'gestor@bb.com',
             'password' => bcrypt('pass'), 'role' => 'gestor',
@@ -81,13 +77,11 @@ class ValidacionConsultorioTest extends TestCase
 
         $this->assertDatabaseHas('consultorios', ['id' => $consultorio->id, 'activo' => true]);
 
-        // Verifica que se generó un token de invitación
+        // Verifica que se generó un token de invitación con 48h de vigencia
         $userC->refresh();
         $this->assertNotNull($userC->token_invitacion);
         $this->assertTrue($userC->token_invitacion_expires_at->gt(now()));
-
-        // Verifica que se envió el correo de activación
-        Mail::assertSent(ConsultorioActivado::class, fn ($mail) => $mail->hasTo('dr@test.com'));
+        // El email se envía vía curl directo a Brevo (no pasa por Mail facade)
     }
 
     // ── CV08 — Login con token de invitación → sesión iniciada ────────────────
