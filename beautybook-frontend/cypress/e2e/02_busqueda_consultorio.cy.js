@@ -20,7 +20,11 @@ describe('Búsqueda de consultorio', () => {
   });
 
   it('navega al detalle del consultorio y muestra tratamientos', () => {
-    cy.contains('Clínica Dental Ruiz', { timeout: 30000 }).click();
+    // El nombre no es un enlace — el botón "Ver y agendar" de la card es el link
+    cy.contains('Clínica Dental Ruiz', { timeout: 30000 })
+      .parents('.card')
+      .contains('Ver y agendar')
+      .click();
     cy.url({ timeout: 30000 }).should('match', /\/paciente\/consultorios\/\d+/);
     cy.contains('Limpieza dental', { timeout: 30000 }).should('exist');
   });

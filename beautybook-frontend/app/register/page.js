@@ -53,8 +53,16 @@ function RegisterForm() {
     const domValues = {};
     e.target.querySelectorAll('[name]').forEach(el => { domValues[el.name] = el.value; });
 
+    const payload = { ...form, ...domValues, role };
+
+    // Los campos de consultorio no se envían para paciente para evitar
+    // que validaciones min:N fallen con valores vacíos
+    if (role === 'paciente') {
+      ['nombre', 'direccion', 'ciudad', 'cedula_profesional'].forEach(k => delete payload[k]);
+    }
+
     try {
-      const { data } = await api.post('/register', { ...form, ...domValues, role });
+      const { data } = await api.post('/register', payload);
       localStorage.setItem('bb-token', data.token);
       setUser(data.user);
       router.push(REDIRECT[role] ?? '/');
