@@ -248,11 +248,11 @@ export default function AdminDashboard() {
             </div>
             <div className="card-body">
               <div className="row g-3">
-                {['gratuito', 'basico', 'premium'].map(plan => {
+                {['basico', 'premium', 'pro', 'gratuito'].map(plan => {
                   const count = lista.filter(c => c.membrecia?.plan === plan).length;
                   const pct   = lista.length ? Math.round((count / lista.length) * 100) : 0;
                   return (
-                    <div key={plan} className="col-md-4">
+                    <div key={plan} className="col-md-3">
                       <div className="d-flex align-items-center justify-content-between mb-1">
                         <span className="fw-medium small">{PLAN_LABEL[plan]}</span>
                         <span className="text-muted small">{count} ({pct}%)</span>
