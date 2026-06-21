@@ -5,7 +5,7 @@ const isProd = process.env.CYPRESS_ENV === 'prod';
 module.exports = defineConfig({
   e2e: {
     baseUrl: isProd
-      ? 'https://beautybook-frontend.vercel.app'
+      ? 'https://beautybook-dental.vercel.app'
       : (process.env.CYPRESS_BASE_URL || 'http://localhost:3000'),
     viewportWidth: 1280,
     viewportHeight: 720,

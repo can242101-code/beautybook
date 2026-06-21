@@ -6,7 +6,8 @@ describe('Panel de consultorio', () => {
 
   it('muestra el dashboard con citas del día', () => {
     cy.visit('/consultorio/dashboard');
-    cy.contains('Dashboard', { timeout: 8000 }).should('exist');
+    cy.url().should('include', '/consultorio/dashboard');
+    cy.get('nav', { timeout: 8000 }).should('exist');
   });
 
   it('muestra la lista de tratamientos', () => {

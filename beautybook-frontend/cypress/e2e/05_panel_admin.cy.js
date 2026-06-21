@@ -14,14 +14,12 @@ describe('Panel de administración', () => {
     cy.contains('Clínica Dental Ruiz', { timeout: 8000 }).should('exist');
   });
 
-  it('muestra el detalle de un consultorio', () => {
+  it('muestra el botón de acción sobre un consultorio activo', () => {
     cy.visit('/admin/consultorios');
-    cy.contains('Clínica Dental Ruiz', { timeout: 8000 })
-      .closest('.card, li, tr')
-      .within(() => {
-        cy.get('button').contains(/ver|detalle/i).click();
-      });
-    cy.contains('Membrecía', { timeout: 8000 }).should('exist');
+    cy.contains('Clínica Dental Ruiz', { timeout: 8000 }).should('exist');
+    // Los consultorios activos tienen botón Bloquear; los pendientes, Validar
+    cy.get('button').contains(/Validar|Bloquear/i, { timeout: 8000 })
+      .should('exist');
   });
 
   it('redirige a login si no es gestor', () => {

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { DIAS_ABBR as DIAS_ES, DIAS_ORDEN } from '@/lib/constants';
 
 const PLAN_STYLE = {
+  pro:      { color: '#7c3aed', bg: 'rgba(124,58,237,.1)',  icon: 'bi-gem',                   label: 'Pro'      },
   premium:  { color: '#d97706', bg: 'rgba(217,119,6,.1)',   icon: 'bi-lightning-charge-fill', label: 'Premium'  },
   basico:   { color: 'var(--bb-p)', bg: 'rgba(var(--bb-p-rgb),.1)', icon: 'bi-star-fill',    label: 'Básico'   },
   gratuito: { color: '#64748b', bg: 'rgba(100,116,139,.08)', icon: 'bi-star',                label: 'Gratuito' },
@@ -75,8 +76,8 @@ export default function ConsultoriosPublicosPage() {
       ) : (
         <div className="row g-4">
           {consultorios.map(c => {
-            const plan  = c.membrecia?.plan ?? 'gratuito';
-            const ps    = PLAN_STYLE[plan];
+            const plan  = c.membrecia?.plan ?? 'basico';
+            const ps    = PLAN_STYLE[plan] ?? PLAN_STYLE.basico;
             const dias  = (c.horarios ?? []).filter(h => h.activo).map(h => h.dia_semana);
             const calificaciones = (c.citas ?? []).filter(ci => ci.calificacion);
             const prom  = calificaciones.length

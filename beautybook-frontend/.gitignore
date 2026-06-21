@@ -45,6 +45,18 @@ test-roles.mjs
 test-produccion.mjs
 test-calificacion.mjs
 test-recuperar-contrasena.mjs
+check-api-url.mjs
+check-cors.mjs
+test-diagnostico.mjs
+test-flujos-completo.mjs
+test-login-rapido.mjs
+test-login-visual.mjs
+test-prod-avanzado.mjs
+test-visual.mjs
+
+# cypress artifacts
+cypress/screenshots/
+cypress/videos/
 
 # páginas de acceso rápido solo para desarrollo
 /app/dev-login/
