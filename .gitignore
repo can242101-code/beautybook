@@ -16,4 +16,11 @@ zap_report*.html
 # Scripts locales de prueba
 test-produccion.mjs
 test-roles.mjs
+test-*.mjs
+check-*.mjs
+agregar-*.mjs
 capturas-produccion/
+capturas-*/
+.brevo-profile/
+
+.vercel
