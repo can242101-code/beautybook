@@ -60,16 +60,7 @@ export default function LoginPage() {
 
             {/* Icono + título */}
             <div className="text-center mb-4">
-              <div
-                className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
-                style={{
-                  width: 52, height: 52,
-                  background: 'linear-gradient(135deg, var(--bb-primary), var(--bb-primary-dark))',
-                  boxShadow: '0 4px 14px rgba(var(--bb-primary-rgb),.35)',
-                }}
-              >
-                <i className="bi bi-calendar2-check fs-4 text-white" />
-              </div>
+              <img src="/logo.png" alt="BeautyBook" style={{ height: 72, width: 'auto' }} className="mb-3" />
               <h5 className="fw-bold mb-1">Iniciar sesión</h5>
               <p className="text-muted small mb-0">Accede a tu cuenta para continuar.</p>
             </div>
