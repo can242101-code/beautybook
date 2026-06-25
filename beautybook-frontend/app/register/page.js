@@ -76,16 +76,7 @@ function RegisterForm() {
 
             {/* Icono + título */}
             <div className="text-center mb-4">
-              <div
-                className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
-                style={{
-                  width: 56, height: 56,
-                  background: 'linear-gradient(135deg, var(--bb-primary), var(--bb-primary-dark))',
-                  boxShadow: '0 6px 20px rgba(var(--bb-primary-rgb),.40)',
-                }}
-              >
-                <i className="bi bi-person-plus-fill fs-3 text-white" />
-              </div>
+              <img src="/logo.png" alt="BeautyBook" style={{ height: 72, width: 'auto' }} className="mb-3" />
               <h5 className="fw-bold mb-1">Crear cuenta</h5>
               <p className="text-muted small mb-0">Completa los datos para registrarte en BeautyBook.</p>
             </div>
