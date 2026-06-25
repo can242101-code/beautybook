@@ -30,7 +30,7 @@ function NavContent({ pathname, user, onLogout }) {
           className="d-flex align-items-center gap-2 mb-2 text-decoration-none text-body"
           title="Ir al inicio"
         >
-          <img src="/logo.png" alt="BeautyBook" style={{ height: 34, width: 34, objectFit: 'contain' }} className="flex-shrink-0" />
+          <img src="/logo.png" alt="BeautyBook" style={{ height: 44, width: 22, objectFit: 'contain' }} className="flex-shrink-0" />
           <span className="fw-bold fs-6">BeautyBook</span>
         </Link>
         <span
@@ -154,7 +154,7 @@ export default function AdminSidebar() {
       >
         <div className="offcanvas-header border-bottom py-3">
           <Link href="/" className="fw-bold text-decoration-none text-body d-flex align-items-center gap-2" id="adminOffcanvasLabel">
-            <img src="/logo.png" alt="BeautyBook" style={{ height: 28, width: 'auto' }} />
+            <img src="/logo.png" alt="BeautyBook" style={{ height: 36, width: 18, objectFit: 'contain' }} />
             BeautyBook
           </Link>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar" />
