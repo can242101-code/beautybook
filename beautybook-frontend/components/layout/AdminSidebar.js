@@ -30,16 +30,7 @@ function NavContent({ pathname, user, onLogout }) {
           className="d-flex align-items-center gap-2 mb-2 text-decoration-none text-body"
           title="Ir al inicio"
         >
-          <div
-            className="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0"
-            style={{
-              width: 34, height: 34,
-              background: 'linear-gradient(135deg, var(--bb-primary), var(--bb-primary-dark))',
-              boxShadow: '0 2px 8px rgba(var(--bb-primary-rgb),.4)',
-            }}
-          >
-            <i className="bi bi-calendar2-check text-white" style={{ fontSize: '.85rem' }} />
-          </div>
+          <img src="/logo.png" alt="BeautyBook" style={{ height: 34, width: 34, objectFit: 'contain' }} className="flex-shrink-0" />
           <span className="fw-bold fs-6">BeautyBook</span>
         </Link>
         <span
@@ -163,7 +154,7 @@ export default function AdminSidebar() {
       >
         <div className="offcanvas-header border-bottom py-3">
           <Link href="/" className="fw-bold text-decoration-none text-body d-flex align-items-center gap-2" id="adminOffcanvasLabel">
-            <i className="bi bi-calendar2-check text-primary" />
+            <img src="/logo.png" alt="BeautyBook" style={{ height: 28, width: 'auto' }} />
             BeautyBook
           </Link>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar" />
