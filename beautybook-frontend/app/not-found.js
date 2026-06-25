@@ -6,12 +6,7 @@ export default function NotFound() {
       className="d-flex flex-column align-items-center justify-content-center text-center"
       style={{ minHeight: '100vh', padding: '2rem' }}
     >
-      <div
-        className="d-flex align-items-center justify-content-center rounded-4 bg-primary bg-opacity-10 mb-4"
-        style={{ width: 80, height: 80 }}
-      >
-        <i className="bi bi-calendar2-x text-primary" style={{ fontSize: '2.25rem' }} />
-      </div>
+      <img src="/logo.png" alt="BeautyBook" style={{ height: 80, width: 'auto' }} className="mb-4" />
 
       <h1 className="fw-bold" style={{ fontSize: '4rem', lineHeight: 1, color: 'var(--bs-primary)' }}>404</h1>
       <h4 className="fw-semibold mt-2 mb-2">Página no encontrada</h4>
