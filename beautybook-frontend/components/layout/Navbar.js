@@ -89,7 +89,7 @@ export default function Navbar() {
 
             {/* Logo */}
             <Link className="navbar-brand fw-bold mb-0 d-flex align-items-center gap-2" href="/">
-              <img src="/logo.png" alt="BeautyBook" style={{ height: 32, width: 'auto' }} />
+              <img src="/logo.png" alt="BeautyBook" style={{ height: 44, width: 22, objectFit: 'contain' }} />
               BeautyBook
             </Link>
           </div>
@@ -155,7 +155,7 @@ export default function Navbar() {
         {/* Cabecera */}
         <div className="offcanvas-header border-bottom py-3">
           <div className="d-flex align-items-center gap-2" id="navOffcanvasLabel">
-            <img src="/logo.png" alt="BeautyBook" style={{ height: 28, width: 'auto' }} />
+            <img src="/logo.png" alt="BeautyBook" style={{ height: 36, width: 18, objectFit: 'contain' }} />
             <span className="fw-bold">BeautyBook</span>
           </div>
           <button
