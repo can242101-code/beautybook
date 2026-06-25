@@ -154,7 +154,7 @@ export default function AdminSidebar() {
       >
         <div className="offcanvas-header border-bottom py-3">
           <Link href="/" className="fw-bold text-decoration-none text-body d-flex align-items-center gap-2" id="adminOffcanvasLabel">
-            <i className="bi bi-calendar2-check text-primary" />
+            <img src="/logo.png" alt="BeautyBook" style={{ height: 28, width: 'auto' }} />
             BeautyBook
           </Link>
           <button type="button" className="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar" />
